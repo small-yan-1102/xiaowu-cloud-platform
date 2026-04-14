@@ -13,20 +13,31 @@
 - AI 读取 Markdown 测试用例 → 通过 browser-use MCP 直接操作浏览器 → 自主判断测试结果
 - **不编写** Playwright/Pytest 自动化脚本
 
-## 规则体系（`.claude/rules/`）
+## 规则体系
 
-| 规则文件 | 职责 |
-|---------|------|
-| `rules.md` | 基础规则（语言、环境、角色）+ 工作流映射 |
-| `ai_test_case_design.md` | 测试用例设计规范（含附录 A-G、§4.6 确定性断言、B.2 人工介入分级、E.7 静态数据池） |
-| `smoke_test_design.md` | 冒烟测试设计规范 |
-| `ai_execution_strategy.md` | AI执行策略（浏览器操作、等待、重试、环境准备、部署预检、§3.4 自愈边界、生产环境约束） |
-| `ai_execution_report.md` | AI执行报告（结果记录、截图规范、汇总报告、线上回归报告） |
-| `tech_doc_review.md` | 技术文档审阅检查标准 |
-| `tech-optimization-ai-testing-rules.md` | 技术优化项目测试准入规则 |
-| `test-environment-config.md` | 测试环境基础设施（DB/服务器/登录账号/data-testid 索引），执行测试前必读 |
+> 规则文件已按「自动加载」和「按需读取」分层管理，减少每次对话的 context 开销。
+> 敏感凭证（密码等）已分离至 `.claude/secrets/credentials.md`（不自动加载，已加入 .gitignore）。
 
-规则间关系详见 `.claude/docs/README-rules-relationship.md`（按需查阅，非每次对话必读）。
+### 自动加载（`.claude/rules/`，每次对话注入）
+
+| 文件 | 职责 |
+|------|------|
+| `rules.md` | 基础规则（语言、环境、角色）+ D1-D5 工作流映射 |
+| `test-environment-config.md` | 测试环境 URL、登录路径、data-testid 索引（已脱敏） |
+
+### 按需读取（`.claude/docs/`，Skill 执行时加载）
+
+| 文件 | 职责 | 关联 Skill |
+|------|------|-----------|
+| `ai_test_case_design.md` | 测试用例设计规范（附录 A-G、确定性断言、人工介入分级、静态数据池） | test-case-design |
+| `smoke_test_design.md` | 冒烟测试设计规范 | test-case-design Mode D |
+| `ai_execution_strategy.md` | AI执行策略（浏览器操作、等待、重试、部署预检、自愈边界、生产环境约束） | test-execution |
+| `ai_execution_report.md` | AI执行报告（结果记录、截图规范、汇总报告、线上回归报告） | test-execution / test-report |
+| `tech_doc_review.md` | 技术文档审阅检查标准 | tech-doc-review |
+| `tech-optimization-ai-testing-rules.md` | 技术优化项目测试准入规则 | 手动引用 |
+| `tech-optimization-ai-testing-guide.md` | 技术优化项目使用说明 | 手动引用 |
+
+规则间关系详见 `.claude/docs/README-rules-relationship.md`（按需查阅）。
 
 ## 工作流（单周迭代）
 
@@ -34,8 +45,8 @@
 D1 PRD三方对齐       → /test-prd-review
 D2 技术文档审阅      → /tech-doc-review
 D3 测试用例设计      → /test-case-design（Mode A/B/C/D）
-D4 冒烟+测试执行     → 参考 ai_execution_strategy.md + ai_execution_report.md
-D5 发版+线上回归     → /test-case-design Mode C + ai_execution_strategy.md §8/§9
+D4 冒烟+测试执行     → 参考 .claude/docs/ai_execution_strategy.md + ai_execution_report.md
+D5 发版+线上回归     → /test-case-design Mode C + .claude/docs/ai_execution_strategy.md §8/§9
 ```
 
 ## 可用技能命令（`.claude/commands/`）
@@ -83,45 +94,47 @@ E:\Orange\小五云平台\
 ├── README.md                                    ← 根目录快速指南
 ├── 目录结构说明.md                               ← 详细目录结构使用说明
 ├── .claude/
-│   ├── commands/                                ← /斜杠命令入口（40 个）
-│   ├── rules/                                   ← 规则文件（设计规范/执行策略/报告格式）
+│   ├── commands/                                ← /斜杠命令入口（43 个）
+│   ├── rules/                                   ← 自动加载规则（rules.md + 环境配置，~30KB）
+│   ├── docs/                                    ← 按需读取规则（用例设计/执行策略/报告等，~160KB）
 │   │   └── templates/                           ← 技术优化测试模板
-│   ├── skills/                                  ← 技能支撑文件（40 个 skill 目录）
+│   ├── skills/                                  ← 技能支撑文件（43 个 skill 目录）
+│   ├── secrets/                                 ← 敏感凭证（已加入 .gitignore）
 │   └── settings.local.json                      ← 权限配置
 │
 ├── systems/                                     ← 维度一：系统知识库（持久化，跨迭代沉淀）
-│   ├── _shared/                                 ← 跨系统共享（系统关系图/枚举值字典/环境信息）
-│   ├── AMS/
-│   │   ├── knowledge/                           ← AMS 功能清单、changelog、data-testid 映射
-│   │   └── code/                                ← 代码仓库（silverdawn-ams-web / server）
-│   ├── 结算系统/
-│   │   ├── knowledge/                           ← 结算功能清单、YT核算逻辑、data-testid（11模块）
-│   │   └── code/                                ← 代码仓库（silverdawn-finance-web / server）
-│   ├── 剧老板/
-│   │   ├── knowledge/                           ← 剧老板功能清单、权限逻辑、data-testid
-│   │   └── code/                                ← 代码仓库（distribution-web / server）
-│   ├── CRM/
-│   │   ├── knowledge/                           ← CRM 功能清单、交接单管理
-│   │   └── code/                                ← 代码仓库（待补充仓库名）
-│   ├── 总控系统/
-│   │   ├── knowledge/                           ← 总控功能清单、额度规则
-│   │   └── code/                                ← 代码仓库（待补充仓库名）
-│   └── 云平台/
-│       └── knowledge/                           ← SSO 登录、应用中心功能清单、data-testid
+│   ├── _shared/                                 ← 跨系统共享（系统关系图/枚举值字典/代码仓库管理）
+│   ├── AMS/                                     ← 资产管理系统
+│   │   ├── knowledge/                           ← 功能清单、changelog、data-testid（2模块）
+│   │   └── code/                                ← silverdawn-ams-web + silverdawn-ams-server
+│   ├── 结算系统/                                 ← 财务结算系统
+│   │   ├── knowledge/                           ← 功能清单、YT核算逻辑、data-testid（11模块）
+│   │   └── code/                                ← silverdawn-finance-web + silverdawn-finance-server
+│   ├── 剧老板/                                   ← 分销商端
+│   │   ├── knowledge/                           ← 功能清单、权限逻辑、data-testid（3模块）
+│   │   └── code/                                ← distribution-server-web + distribution-server
+│   ├── CRM/                                     ← 客户关系管理
+│   │   ├── knowledge/                           ← 功能清单、交接单管理
+│   │   └── code/                                ← silverdawn-recruitment-web + silverdawn-crm-server
+│   ├── 总控系统/                                 ← 额度/配额管理
+│   │   └── knowledge/                           ← 功能清单、额度规则
+│   └── 云平台/                                   ← SSO 统一登录 + 应用中心
+│       └── knowledge/                           ← 功能清单、data-testid（登录+应用中心）
+│
+├── linscode/                                    ← Harness 工程化工具链（独立 Git 仓库）
+├── tools/                                       ← 云效 Testhub 同步工具
+├── docs/                                        ← 参考文档（指向 linscode/）
 │
 ├── iterations/                                  ← 维度二：迭代管理（按时间推进，每次迭代一个目录）
-│   ├── 2026-Q1_AMS-V2.0.0_视频下架/
-│   │   ├── input/prd/  input/tech/              ← 需求输入（PRD + 技术文档）
-│   │   ├── review/                              ← 审阅报告
-│   │   ├── testcase/                            ← 测试用例套件（suite_*.md）
-│   │   └── report/screenshots/                  ← 测试报告 + 执行截图
-│   ├── 2026-Q1_AMS+CRM_作品管理与交接单改造/
-│   │   ├── input/  review/  testcase/  report/
-│   └── 2026-Q2_结算系统_逾期结算处理优化/
-│       ├── input/prd/  input/tech/
-│       ├── review/                              ← PRD审阅报告（D1已完成）
-│       ├── testcase/                            ← 测试用例（D3 待设计）
-│       └── report/
+│   ├── 2026-Q1_AMS-V2.0.0_视频下架/             ← D4 完成（含执行报告+截图）
+│   │   ├── input/prd/README.md                  ← 基线: 视频下架PRD-2026040202.md
+│   │   ├── review/  testcase/  report/
+│   ├── 2026-Q1_AMS+CRM_作品管理与交接单改造/     ← D3 完成（10 个用例套件）
+│   │   ├── input/prd/README.md                  ← 基线: 作品管理与交接单改造-PRD.md
+│   │   ├── review/  testcase/  report/
+│   └── 2026-Q2_结算系统_逾期结算处理优化/         ← D1 完成（PRD审阅+测试点提取）
+│       ├── input/prd/README.md                  ← 基线: PRD-V4.5-2026041001.md
+│       ├── review/  testcase/  report/
 │
 ├── templates/                                   ← 迭代/系统模板（iteration_readme、changelog 等）
 └── scripts/                                     ← 工具脚本（update-all-repos.ps1）

@@ -18,7 +18,7 @@
 |   +-- _shared/                          #   跨系统共享知识
 |       +-- 系统关系图.md                  #     系统间数据流+调用关系
 |       +-- 枚举值字典.md                  #     全局统一枚举定义
-|       +-- 环境信息.md                    #     各环境地址+账号
+|       +-- 代码仓库管理.md                #     仓库总索引+管理规范
 |
 +-- iterations/                           # 维度二：迭代（项目管理，按时间推进）
 |   +-- 2026-Q1_AMS-V2.0.0_视频下架/     #   迭代示例
@@ -57,7 +57,7 @@
 
 - `systems/_shared/枚举值字典.md`：统一枚举定义
 - `systems/_shared/系统关系图.md`：系统间调用关系
-- `systems/_shared/环境信息.md`：测试环境地址和账号
+- `.claude/rules/test-environment-config.md`：测试环境地址和账号（密码见 `.claude/secrets/credentials.md`）
 
 ---
 

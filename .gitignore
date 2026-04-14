@@ -19,6 +19,7 @@ linscode/
 tools/yunxiao/config.yaml
 tools/yunxiao/sync_state.json
 .claude/settings.local.json
+.claude/secrets/
 
 # Skills 内敏感配置
 .claude/skills/yunxiao-sync/config.yaml
