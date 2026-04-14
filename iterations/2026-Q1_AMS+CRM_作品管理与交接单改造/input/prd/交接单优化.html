@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交接单 - CRM</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f0f2f5; min-height: 100vh; color: #1a1a2e; }
+        
+        /* 布局 */
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #1a1a2e; z-index: 200; }
+        .sidebar-logo { height: 56px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid rgba(255,255,255,0.08); gap: 10px; }
+        .sidebar-logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, #9155FD 0%, #7c3aed 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; }
+        .sidebar-logo-text { color: #fff; font-size: 15px; font-weight: 600; }
+        .sidebar-nav { padding: 12px 0; }
+        .sidebar-group-title { padding: 16px 20px 8px; font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-item { display: flex; align-items: center; padding: 0 20px; height: 42px; color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s; gap: 12px; }
+        .sidebar-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .sidebar-item.active { color: #fff; background: linear-gradient(90deg, rgba(145, 85, 253, 0.2) 0%, transparent 100%); position: relative; }
+        .sidebar-item.active::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: #9155FD; border-radius: 0 3px 3px 0; }
+        
+        .main-wrapper { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+        .page-header { background: #fff; padding: 0 24px; height: 56px; border-bottom: 1px solid #ebedf0; display: flex; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .page-header h1 { font-size: 17px; font-weight: 600; color: #1a1a2e; }
+        
+        .page-content { flex: 1; padding: 20px 24px; overflow: auto; }
+        
+        /* Tab */
+        .tabs-container { background: #fff; border-radius: 8px 8px 0 0; border-bottom: 1px solid #e8e8e8; }
+        .tabs { display: flex; }
+        .tab { padding: 14px 24px; font-size: 14px; color: #666; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 500; }
+        .tab:hover { color: #9155FD; }
+        .tab.active { color: #9155FD; border-bottom-color: #9155FD; }
+        
+        /* 搜索区域 */
+        .search-card { background: #fff; padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
+        .search-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .search-item { display: flex; flex-direction: column; gap: 6px; }
+        .search-label { font-size: 13px; color: #606068; font-weight: 500; }
+        .search-input, .search-select { padding: 0 12px; height: 36px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 13px; outline: none; transition: all 0.2s; }
+        .search-input:focus, .search-select:focus { border-color: #9155FD; box-shadow: 0 0 0 3px rgba(145, 85, 253, 0.1); }
+        .search-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f2; }
+        
+        /* 按钮 */
+        .btn { padding: 0 16px; height: 34px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.25s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500; outline: none; border: none; }
+        .btn-default { background: #fff; border: 1px solid #d4d7de; color: #4a4a5a; }
+        .btn-default:hover { border-color: #9155FD; color: #9155FD; }
+        .btn-primary { background: linear-gradient(135deg, #9155FD 0%, #7c3aed 100%); color: #fff; box-shadow: 0 2px 8px rgba(145, 85, 253, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(145, 85, 253, 0.4); }
+        .btn-text { background: transparent; border: none; color: #9155FD; padding: 0 8px; height: auto; }
+        .btn-text:hover { color: #7c3aed; background: #f5f0ff; border-radius: 4px; }
+        
+        /* 操作栏 */
+        .action-bar { background: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; }
+        .action-left { display: flex; gap: 12px; }
+        .action-right { font-size: 13px; color: #606068; }
+        .expiring-link { color: #f5222d; cursor: pointer; text-decoration: underline; }
+        
+        /* 表格 */
+        .table-container { background: #fff; overflow: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #fafafa; padding: 12px 16px; text-align: left; font-weight: 600; color: #606068; border-bottom: 1px solid #ebedf0; white-space: nowrap; }
+        td { padding: 12px 16px; color: #3a3a4a; border-bottom: 1px solid #f0f0f2; vertical-align: top; }
+        tr:hover { background: #fafafa; }
+        .table-link { color: #9155FD; cursor: pointer; }
+        .table-link:hover { text-decoration: underline; }
+        
+        /* 标签 */
+        .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .tag-primary { background: #f5f0ff; color: #9155FD; }
+        .tag-success { background: #f6ffed; color: #52c41a; }
+        .tag-warning { background: #fff7e6; color: #fa8c16; }
+        .tag-error { background: #fff1f0; color: #f5222d; }
+        .expire-tag { background: #fff1f0; color: #f5222d; padding: 0 6px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+        
+        /* 展开行 */
+        .expand-row { background: #fafafa; }
+        .expand-content { padding: 16px; }
+        .sub-table { width: 100%; border: 1px solid #e8e8e8; border-radius: 6px; overflow: hidden; }
+        .sub-table th { background: #f5f5f5; font-size: 12px; padding: 10px 12px; }
+        .sub-table td { font-size: 12px; padding: 10px 12px; }
+        /* 交接单详情样式 */
+        .delivery-section-title { font-weight:600; font-size:14px; margin-bottom:16px; display:flex; align-items:center; gap:8px; color:#1a1a2e; }
+        .delivery-section-title::before { content:''; display:inline-block; width:3px; height:14px; background:#9155FD; border-radius:2px; flex-shrink:0; }
+        .delivery-table { width:100%; border-collapse:collapse; border:1px solid #e8e8e8; border-radius:6px; overflow:hidden; }
+        .delivery-table th { background:#f5f7fa; font-size:13px; font-weight:500; color:#606068; padding:10px 14px; text-align:left; border-bottom:1px solid #e8e8e8; }
+        .delivery-table td { font-size:13px; color:#1a1a2e; padding:12px 14px; border-bottom:1px solid #f5f5f5; }
+        .delivery-table tr:last-child td { border-bottom:none; }
+        .delivery-table tr:hover td { background:#fafafa; }
+        .delivery-kv-table { width:100%; border-collapse:collapse; border:1px solid #e8e8e8; border-radius:6px; overflow:hidden; }
+        .delivery-kv-table td { font-size:13px; padding:12px 14px; border-bottom:1px solid #f5f5f5; vertical-align:top; }
+        .delivery-kv-table tr:last-child td { border-bottom:none; }
+        .kv-label { color:#8c8c9a; width:160px; white-space:nowrap; background:#f5f7fa; }
+        .kv-value { color:#1a1a2e; }
+        
+        /* 分页 */
+        .pagination { background: #fff; padding: 16px 24px; display: flex; justify-content: flex-end; align-items: center; gap: 16px; border-radius: 0 0 8px 8px; }
+        .page-info { font-size: 13px; color: #606068; }
+        .page-btns { display: flex; gap: 8px; }
+        .page-btn { padding: 0 12px; height: 32px; border: 1px solid #d4d7de; background: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .page-btn:hover { border-color: #9155FD; color: #9155FD; }
+        .page-btn.active { background: #9155FD; color: #fff; border-color: #9155FD; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 弹窗 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 3000; }
+        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal { background: #fff; border-radius: 8px; width: 600px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 16px; font-weight: 600; }
+        .modal-close { width: 32px; height: 32px; border: none; background: #f5f5f8; border-radius: 6px; cursor: pointer; font-size: 18px; color: #8c8c9a; }
+        .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end; gap: 12px; }
+        
+        /* 抽屉 */
+        .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 2000; }
+        .drawer-overlay.active { display: block; }
+        .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 900px; background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.3s; display: flex; flex-direction: column; }
+        .drawer-overlay.active .drawer { transform: translateX(0); }
+        .drawer-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f2; }
+        .drawer-header-top { display: flex; justify-content: space-between; align-items: center; }
+        .drawer-title { font-size: 18px; font-weight: 600; }
+        .drawer-close { width: 32px; height: 32px; border: none; background: #f5f5f8; border-radius: 6px; cursor: pointer; font-size: 18px; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 24px; }
+        
+        /* 时间线 */
+        .timeline { padding: 20px; }
+        .timeline-item { display: flex; gap: 16px; padding-bottom: 24px; position: relative; }
+        .timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 6px; top: 24px; bottom: 0; width: 2px; background: #e8e8e8; }
+        .timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: #9155FD; flex-shrink: 0; margin-top: 4px; }
+        .timeline-content { flex: 1; }
+        .timeline-time { font-size: 12px; color: #8c8c9a; margin-bottom: 4px; }
+        .timeline-title { font-weight: 500; margin-bottom: 4px; }
+        .timeline-desc { font-size: 13px; color: #606068; }
+        
+        /* 表单 */
+        .form-item { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; color: #606068; margin-bottom: 6px; font-weight: 500; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 8px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 13px; outline: none; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #9155FD; box-shadow: 0 0 0 3px rgba(145, 85, 253, 0.1); }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        
+        /* 复选框下拉 */
+        .checkbox-select { position: relative; }
+        .checkbox-select-trigger { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border: 1px solid #dcdfe6; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; }
+        .checkbox-select-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; background: #fff; border: 1px solid #dcdfe6; border-radius: 6px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .checkbox-select.open .checkbox-select-dropdown { display: block; }
+        .checkbox-select-option { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 13px; }
+        .checkbox-select-option:hover { background: #f5f5f5; }
+        .checkbox-select-option input { width: 14px; height: 14px; accent-color: #9155FD; }
+        
+        /* 作品详情抽屉样式 */
+        .detail-drawer { width: 900px; }
+        .detail-drawer .drawer-header-info { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f2; background: #fff; }
+                .detail-drawer .drawer-header-left { display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 0; }
+        .detail-drawer .drawer-header-main { display: flex; justify-content: space-between; align-items: flex-start; }
+        .detail-drawer .drawer-title-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #9155FD, #7c3aed); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
+        .detail-drawer .drawer-tabs { display: flex; gap: 0; border-bottom: 1px solid #e8e8e8; background: #fafafa; padding: 0 24px; }
+        .detail-drawer .drawer-tab { padding: 14px 24px; font-size: 14px; color: #666; cursor: pointer; position: relative; transition: all 0.2s; font-weight: 500; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .detail-drawer .drawer-tab:hover { color: #9155FD; }
+        .detail-drawer .drawer-tab.active { color: #9155FD; font-weight: 600; border-bottom-color: #9155FD; background: #fff; }
+        .detail-drawer .drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; background: #f5f5f5; }
+        
+        /* 详情卡片 */
+        .info-card { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 16px; border: 1px solid #f0f0f0; }
+        .info-card-title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #9155FD; display: flex; align-items: center; gap: 8px; }
+        .info-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 24px; }
+        .info-row-item { display: flex; align-items: baseline; gap: 8px; }
+        .info-row-label { font-size: 13px; color: #8c8c9a; white-space: nowrap; flex-shrink: 0; }
+        .info-row-value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
+        .info-row-value.link { color: #9155FD; cursor: pointer; }
+        .info-row-value.link:hover { text-decoration: underline; }
+        
+        /* 平台卡片 */
+        .platform-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+        .platform-item { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e8e8e8; }
+        .platform-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .platform-main { display: flex; flex-direction: column; gap: 4px; }
+        .platform-name { font-weight: 600; color: #1a1a2e; font-size: 14px; }
+        .platform-period { font-size: 12px; color: #8c8c9a; }
+        .platform-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+        .platform-package { font-size: 12px; color: #606068; background: #fff; padding: 3px 10px; border-radius: 4px; border: 1px solid #e0e0e0; }
+        
+        /* 编辑弹窗样式 */
+        .edit-modal { width: 700px; }
+        .form-section { margin-bottom: 24px; }
+        .form-section-title { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f0f0f2; display: flex; align-items: center; gap: 8px; }
+        .form-section-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: linear-gradient(180deg, #9155FD, #7c3aed); border-radius: 2px; }
+        .edit-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .edit-item { display: flex; flex-direction: column; gap: 6px; }
+        .edit-item.full-width { grid-column: span 2; }
+        .edit-label { font-size: 13px; color: #606068; font-weight: 500; }
+        .edit-input { padding: 0 12px; height: 36px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 13px; outline: none; transition: all 0.2s; }
+        .edit-input:focus { border-color: #9155FD; box-shadow: 0 0 0 3px rgba(145, 85, 253, 0.1); }
+        .edit-textarea { padding: 10px 12px; min-height: 80px; resize: vertical; }
+        
+        /* 频道选择 */
+        .channel-options { display: flex; gap: 10px; }
+        .channel-option { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid #dcdfe6; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+        .channel-option:hover { border-color: #b895fe; background: #fdfbff; }
+        .channel-option.selected { border-color: #9155FD; background: linear-gradient(135deg, #faf5ff, #f3e9ff); }
+        
+        /* 交接单样式 */
+        .handover-group { border: 1px solid #e8e8e8; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #fafafa; }
+        .group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .group-title { font-weight: 600; color: #1a1a2e; font-size: 14px; }
+        .group-tip { font-size: 12px; color: #8c8c9a; margin-bottom: 12px; padding: 8px 12px; background: #fff7e6; border-radius: 4px; border-left: 3px solid #fa8c16; }
+        .form-label.required::after { content: ' *'; color: #f5222d; }
+
+        .row-main td { padding: 10px 16px; }
+        tr.row-main:hover td { background: #fafafa; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <nav class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">C</div>
+                <span class="sidebar-logo-text">CRM</span>
+            </div>
+            <div class="sidebar-nav">
+                <div class="sidebar-group-title">内容资产</div>
+                <div class="sidebar-item active" onclick="switchMenu('handover')">
+                    <span>📤</span>
+                    <span>交接单</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <div class="main-wrapper">
+            <header class="page-header">
+                <h1 id="pageTitle">交接单管理</h1>
+            </header>
+
+            <!-- 签约内容页面 -->
+            <div class="page-content" id="contractPage" style="display:none;">
+                <!-- Tab -->
+                <div class="tabs-container">
+                    <div class="tabs">
+                        <div class="tab active" data-tab="0" onclick="switchTab('0')">视听作品</div>
+                        <div class="tab" data-tab="5" onclick="switchTab('5')">影视作品</div>
+                        <div class="tab" data-tab="1" onclick="switchTab('1')">图文作品</div>
+                        <div class="tab" data-tab="2" onclick="switchTab('2')">音乐作品</div>
+                    </div>
+                </div>
+
+                <!-- 搜索区域 -->
+                <div class="search-card">
+                    <div class="search-grid" id="searchGrid">
+                        <!-- 动态生成搜索条件 -->
+                    </div>
+                    <div class="search-actions">
+                        <button class="btn btn-text" id="collapseBtn" onclick="toggleSearchCollapse()" style="margin-right: auto;">
+                            展开 <span style="display: inline-block; transition: transform 0.3s;">▼</span>
+                        </button>
+                        <button class="btn btn-default" onclick="resetSearch()">重置</button>
+                        <button class="btn btn-primary" onclick="search()">查询</button>
+                    </div>
+                </div>
+
+                <!-- 操作栏 -->
+                <div class="action-bar">
+                    <div class="action-left">
+                        <button class="btn btn-primary" onclick="openImportModal()">导入</button>
+                        <button class="btn btn-default" onclick="exportExcel()">导出</button>
+                        <button class="btn btn-default" onclick="batchDistribution()">批量分配</button>
+                    </div>
+                    <div class="action-right">
+                        注：<span class="expiring-link" onclick="clickExpiring()">3</span>部作品授权即将到期，为保障视频正常发布，请尽快完成授权延长确认！
+                    </div>
+                </div>
+
+                <!-- 表格 -->
+                <div class="table-container">
+                    <table id="mainTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 32px;"></th>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                                <th style="min-width: 220px;">作品名</th>
+                                <th style="min-width: 130px;">CP名称</th>
+                                <th style="width: 80px;">CP类型</th>
+                                <th style="min-width: 120px;">签约主体</th>
+                                <th style="width: 80px;">引进模式</th>
+                                <th style="width: 70px;">集数</th>
+                                <th style="width: 140px;">
+                                    内部是否可发布
+                                    <span title="分销商转授权作品，内部运营不可发布" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:#d9d9d9;color:#fff;font-size:10px;cursor:help;margin-left:4px;font-style:normal;">i</span>
+                                </th>
+                                <th style="min-width: 140px;">跟进人员</th>
+                                <th style="width: 180px;">创建时间</th>
+                                <th style="width: 110px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <div class="pagination">
+                    <div class="page-info">共 <span id="totalCount">0</span> 条</div>
+                    <div class="page-btns" id="paginationBtns">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 交接单页面 -->
+            <div class="page-content" id="handoverPage">
+                <div class="action-bar">
+                    <button class="btn btn-primary" onclick="openHandoverModal()">+ 创建交接单</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">序号</th>
+                                <th>交接单号</th>
+                                <th>交接作品</th>
+                                <th style="width:100px;">状态</th>
+                                <th style="width:120px;">创建人</th>
+                                <th style="width:150px;">创建时间</th>
+                                <th style="width:100px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handoverTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入弹窗 -->
+    <div class="modal-overlay" id="importModal" onclick="if(event.target === this) closeImportModal()">
+        <div class="modal" style="width: 410px;">
+            <div class="modal-header">
+                <h3>批量导入</h3>
+                <button class="modal-close" onclick="closeImportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="color: rgba(0,0,0,0.6); font-size: 14px;">
+                    <div>1、下载 <span class="table-link" onclick="downloadTemplate()">&lt;入库链接导入模板&gt;</span>，填写相关字段信息；</div>
+                    <div style="margin-top: 12px;">2、导入模板，单次导入限1000条，大小不能超过5M。</div>
+                </div>
+                <div class="form-item" style="margin-top: 16px;">
+                    <div class="upload-area" onclick="document.getElementById('importFile').click()" style="border: 1px dashed #d9d9d9; border-radius: 6px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s;">
+                        <div style="font-size: 32px; color: #bfbfbf;">+</div>
+                        <div style="color: #606068; margin-top: 8px;" id="uploadText">点击上传文件</div>
+                        <div style="color: #8c8c9a; font-size: 12px; margin-top: 4px;">支持 .xlsx、.xls 格式</div>
+                    </div>
+                    <input type="file" id="importFile" accept=".xlsx,.xls" style="display: none;" onchange="handleFileSelect(this)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeImportModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmImport()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建交接单弹窗 -->
+    <div class="modal-overlay" id="handoverModal" onclick="if(event.target === this) closeHandoverModal()">
+        <div class="modal" style="width:700px;max-height:95vh;">
+            <div class="modal-header">
+                <h3>创建交接单</h3>
+                <button class="modal-close" onclick="closeHandoverModal()">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px 24px;">
+                <div id="handoverGroups"></div>
+                <button class="btn btn-text" onclick="addHandoverGroup()" style="margin:8px 0 16px;">+ 新增交接组</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeHandoverModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveHandover()">保存草稿</button>
+                <button class="btn btn-primary" onclick="submitHandover()">提交</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑交接单弹窗 -->
+    <div class="modal-overlay" id="handoverEditModal" onclick="if(event.target === this) closeHandoverEditModal()">
+        <div class="modal" style="width:700px;max-height:95vh;">
+            <div class="modal-header">
+                <h3>编辑交接单</h3>
+                <button class="modal-close" onclick="closeHandoverEditModal()">×</button>
+            </div>
+            <div class="modal-body" style="padding:16px 24px;">
+                <div id="handoverEditGroups"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeHandoverEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveHandoverEdit()">保存并重新交接</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备注弹窗 -->
+    <div class="modal-overlay" id="handoverRemarkModal" onclick="if(event.target === this) closeHandoverRemarkModal()">
+        <div class="modal" style="width:500px;">
+            <div class="modal-header">
+                <h3>交接单备注</h3>
+                <button class="modal-close" onclick="closeHandoverRemarkModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-item full-width">
+                    <label class="form-label">备注内容</label>
+                    <textarea class="form-textarea" id="handoverRemarkText" rows="4" placeholder="请输入备注内容"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeHandoverRemarkModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveHandoverRemark()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 交接单详情抽屉 -->
+    <div class="drawer-overlay" id="handoverDetailDrawer" onclick="if(event.target === this) closeHandoverDetailDrawer()">
+        <div class="drawer" style="width:1200px;">
+            <!-- 标题栏 -->
+            <div class="drawer-header" style="padding:20px 24px 14px;">
+                <div class="drawer-header-top">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="width:18px;height:18px;border:2.5px solid #9155FD;border-radius:3px;display:inline-block;flex-shrink:0;"></span>
+                        <span id="handoverDetailOrderNo" style="font-size:18px;font-weight:700;color:#1a1a2e;">-</span>
+                    </div>
+                    <button class="drawer-close" onclick="closeHandoverDetailDrawer()">×</button>
+                </div>
+                <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:13px;color:#8c8c9a;">
+                    <span>交接人：<span id="handoverDetailCreator" style="color:#606068;">-</span></span>
+                    <span style="color:#d9d9d9;">｜</span>
+                    <span>交接时间：<span id="handoverDetailTime" style="color:#606068;">-</span></span>
+                </div>
+            </div>
+            <!-- 主体 -->
+            <div class="drawer-body" style="background:#f6f7f8;padding:14px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
+                <!-- 频道/作品信息（全宽） -->
+                <div style="background:#fff;border-radius:8px;padding:20px;">
+                    <div class="delivery-section-title">频道/作品信息</div>
+                    <table class="delivery-table">
+                        <thead><tr>
+                            <th>作品名称</th>
+                            <th style="width:90px;">内部是否可发布</th>
+                            <th style="width:120px;">首发时间</th>
+                            <th style="width:110px;">频道发布限制</th>
+                            <th style="width:110px;">字幕可发语种</th>
+                            <th style="width:110px;">字幕禁发语种</th>
+                            <th style="width:110px;">配音可发语种</th>
+                            <th style="width:110px;">配音禁发语种</th>
+                        </tr></thead>
+                        <tbody id="handoverDetailWorksBody"></tbody>
+                    </table>
+                </div>
+                <!-- 账号信息 + 备注信息 并排 -->
+                <div style="display:flex;gap:14px;align-items:stretch;">
+                    <div style="flex:1;background:#fff;border-radius:8px;padding:20px;">
+                        <div class="delivery-section-title">账号信息</div>
+                        <table class="delivery-kv-table">
+                            <tr><td class="kv-label">YT账号归属方</td><td class="kv-value" id="handoverDetailAccountOwner">归属客户</td></tr>
+                            <tr><td class="kv-label">附件</td><td class="kv-value" id="handoverDetailAttachment">-</td></tr>
+                        </table>
+                    </div>
+                    <div style="flex:1;background:#fff;border-radius:8px;padding:20px;display:flex;flex-direction:column;">
+                        <div class="delivery-section-title">备注信息</div>
+                        <div id="handoverDetailRemarkEmpty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0;color:#c0c0c8;">
+                            <svg width="72" height="72" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.4;">
+                                <rect x="16" y="22" width="48" height="52" rx="4" fill="#c8c8d8"/>
+                                <rect x="24" y="14" width="32" height="12" rx="3" fill="#b0b0c8"/>
+                                <rect x="26" y="38" width="28" height="4" rx="2" fill="#fff" opacity="0.7"/>
+                                <rect x="26" y="48" width="20" height="4" rx="2" fill="#fff" opacity="0.5"/>
+                                <rect x="26" y="58" width="24" height="4" rx="2" fill="#fff" opacity="0.4"/>
+                            </svg>
+                            <div style="font-size:13px;">暂无信息</div>
+                        </div>
+                        <div id="handoverDetailRemarkList" style="display:none;"></div>
+                    </div>
+                </div>
+                <!-- 运作要求（全宽） -->
+                <div style="background:#fff;border-radius:8px;padding:20px;">
+                    <div class="delivery-section-title">运作要求</div>
+                    <table class="delivery-kv-table">
+                        <tr><td class="kv-label" style="width:160px;">特殊运作要求及处理方式</td><td class="kv-value" id="handoverDetailRequirements">-</td></tr>
+                        <tr><td class="kv-label">对播放量/更新频次/收益要求</td><td class="kv-value" id="handoverDetailPlayReq">-</td></tr>
+                    </table>
+                </div>
+            </div>
+            <!-- 底部 -->
+            <div style="padding:14px 24px;border-top:1px solid #f0f0f2;display:flex;justify-content:flex-end;">
+                <button class="btn btn-default" onclick="closeHandoverDetailDrawer()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置/编辑弹窗 -->
+    <div class="modal-overlay" id="settingModal" onclick="if(event.target === this) closeSettingModal()">
+        <div class="modal edit-modal" style="z-index: 2000;">
+            <div class="modal-header">
+                <h3 id="settingTitle">作品设置</h3>
+                <button class="modal-close" onclick="closeSettingModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <div class="form-section-title">基本信息</div>
+                    <div class="edit-grid">
+                        <div class="edit-item">
+                            <label class="edit-label">垂类 <span style="color: #f5222d;">*</span></label>
+                            <select class="edit-input" id="settingCategory">
+                                <option value="">请选择垂类</option>
+                                <option value="短剧">短剧</option>
+                                <option value="综艺">综艺</option>
+                                <option value="电影">电影</option>
+                                <option value="动漫">动漫</option>
+                            </select>
+                        </div>
+                        <div class="edit-item full-width">
+                            <label class="edit-label">别名（多个用顿号、分隔）</label>
+                            <input type="text" class="edit-input" id="settingAlias" placeholder="请输入别名，如：别名1、别名2">
+                        </div>
+                        <div class="edit-item full-width">
+                            <label class="edit-label">入库链接</label>
+                            <input type="text" class="edit-input" id="settingStorageUrl" placeholder="请输入入库链接">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-section-title">发布配置</div>
+                    <div class="edit-grid">
+                        <div class="edit-item full-width">
+                            <label class="edit-label">首发时间</label>
+                            <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="publishTimeType" value="anytime" id="publishAnytime" checked onchange="togglePublishTimeType('anytime')">
+                                    随时可发布
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="publishTimeType" value="custom" id="publishCustom" onchange="togglePublishTimeType('custom')">
+                                    自定义时间
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="publishTimeType" value="waiting" id="publishWaiting" onchange="togglePublishTimeType('waiting')">
+                                    暂不可发布，等待上线通知
+                                </label>
+                            </div>
+                            <input class="edit-input" type="datetime-local" id="editFirstPublishTime" style="display:none;">
+                        </div>
+                        <div class="edit-item">
+                            <label class="edit-label">内部是否可发布</label>
+                            <div style="display:flex;gap:12px;">
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="internalPublish" value="true"> 可发布
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="internalPublish" value="false" checked> 不可发布
+                                </label>
+                            </div>
+                        </div>
+                        <div class="edit-item full-width">
+                            <label class="edit-label">频道发布限制</label>
+                            <div style="display:flex;gap:12px;">
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="settingChannel" value="unlimited" checked> 无限制
+                                </label>
+                                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;">
+                                    <input type="radio" name="settingChannel" value="cp_only"> 仅CP指定频道
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeSettingModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveSetting()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 交接单抽屉 -->
+    <div class="drawer-overlay" id="deliveryDrawer" onclick="if(event.target === this) closeDeliveryDrawer()">
+        <div class="drawer" style="width: 1200px;">
+            <div class="drawer-header" style="padding:20px 24px 14px;">
+                <div class="drawer-header-top">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span style="width:18px;height:18px;border:2.5px solid #9155FD;border-radius:3px;display:inline-block;flex-shrink:0;"></span>
+                        <span class="drawer-title" id="deliveryNo" style="font-size:18px;font-weight:700;color:#1a1a2e;">-</span>
+                    </div>
+                    <button class="drawer-close" onclick="closeDeliveryDrawer()">×</button>
+                </div>
+                <div style="margin-top:10px;display:flex;align-items:center;gap:8px;font-size:13px;color:#8c8c9a;">
+                    <span>交接人：<span id="deliveryCreator" style="color:#606068;">张三</span></span>
+                    <span style="color:#d9d9d9;">｜</span>
+                    <span>交接时间：<span id="deliveryTime" style="color:#606068;">2024-03-15 10:30:00</span></span>
+                </div>
+            </div>
+            <div class="drawer-body" style="background:#f6f7f8;padding:14px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;">
+                <!-- 频道/作品信息（全宽） -->
+                <div style="background:#fff;border-radius:8px;padding:20px;">
+                    <div class="delivery-section-title">频道/作品信息</div>
+                    <table class="delivery-table">
+                        <thead><tr>
+                            <th>作品名称</th>
+                            <th style="width:90px;">内部是否可发布</th>
+                            <th style="width:120px;">首发时间</th>
+                            <th style="width:110px;">频道发布限制</th>
+                            <th style="width:110px;">字幕可发语种</th>
+                            <th style="width:110px;">字幕禁发语种</th>
+                            <th style="width:110px;">配音可发语种</th>
+                            <th style="width:110px;">配音禁发语种</th>
+                        </tr></thead>
+                        <tbody id="deliveryWorksTable"></tbody>
+                    </table>
+                </div>
+                <!-- 账号信息 + 备注信息 并排 -->
+                <div style="display:flex;gap:14px;align-items:stretch;">
+                    <div style="flex:1;background:#fff;border-radius:8px;padding:20px;">
+                        <div class="delivery-section-title">账号信息</div>
+                        <table class="delivery-kv-table" id="deliveryAccountTable">
+                            <tr><td class="kv-label">YT账号归属方</td><td class="kv-value">归属客户</td></tr>
+                            <tr><td class="kv-label">附件</td><td class="kv-value" id="deliveryAttachment">-</td></tr>
+                        </table>
+                    </div>
+                    <div style="flex:1;background:#fff;border-radius:8px;padding:20px;display:flex;flex-direction:column;">
+                        <div class="delivery-section-title">备注信息</div>
+                        <div id="deliveryRemarkEmpty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0;color:#c0c0c8;">
+                            <svg width="72" height="72" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:12px;opacity:0.4;">
+                                <rect x="16" y="22" width="48" height="52" rx="4" fill="#c8c8d8"/>
+                                <rect x="24" y="14" width="32" height="12" rx="3" fill="#b0b0c8"/>
+                                <rect x="26" y="38" width="28" height="4" rx="2" fill="#fff" opacity="0.7"/>
+                                <rect x="26" y="48" width="20" height="4" rx="2" fill="#fff" opacity="0.5"/>
+                                <rect x="26" y="58" width="24" height="4" rx="2" fill="#fff" opacity="0.4"/>
+                            </svg>
+                            <div style="font-size:13px;">暂无信息</div>
+                        </div>
+                        <div id="deliveryRemarkList" style="display:none;"></div>
+                    </div>
+                </div>
+                <!-- 运作要求（全宽） -->
+                <div style="background:#fff;border-radius:8px;padding:20px;">
+                    <div class="delivery-section-title">运作要求</div>
+                    <table class="delivery-kv-table">
+                        <tr><td class="kv-label" style="width:160px;">特殊运作要求及处理方式</td><td class="kv-value" id="deliverySpecialReq">随时上线 只能发布在指定频道里（有自己的单开频道），不要发布其他频道</td></tr>
+                        <tr><td class="kv-label">对播放量/更新频次/收益要求</td><td class="kv-value" id="deliveryPlayReq">-</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div style="padding:14px 24px;border-top:1px solid #f0f0f2;display:flex;justify-content:flex-end;">
+                <button class="btn btn-default" onclick="closeDeliveryDrawer()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 时间线抽屉 -->
+    <div class="drawer-overlay" id="timelineDrawer" onclick="if(event.target === this) closeTimelineDrawer()">
+        <div class="drawer" style="width: 500px;">
+            <div class="drawer-header">
+                <div class="drawer-header-top">
+                    <div class="drawer-title">时间线</div>
+                    <button class="drawer-close" onclick="closeTimelineDrawer()">×</button>
+                </div>
+            </div>
+            <div class="drawer-body" style="background: #f6f7f8; padding: 12px 20px;">
+                <div style="background: #fff; border-radius: 6px; padding: 20px; height: 100%;">
+                    <!-- 平台信息 -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <span style="width: 24px; height: 24px; background: #ff0000; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px;">▶</span>
+                        <span style="font-weight: 600; font-size: 16px;" id="timelineChannelName">-</span>
+                    </div>
+                    <div style="padding: 10px 0; font-size: 14px;">发布状态：<span id="timelineStatus">-</span></div>
+                    <!-- 时间线列表 -->
+                    <div style="background: #f7f9fb; border-radius: 6px; padding: 8px 16px 16px;">
+                        <div class="timeline" id="timelineContent">
+                            <!-- 动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="padding: 16px 24px; border-top: 1px solid #f0f0f2;">
+                <button class="btn btn-default" onclick="closeTimelineDrawer()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分配弹窗 -->
+    <div class="modal-overlay" id="allocationModal" onclick="if(event.target === this) closeAllocationModal()">
+        <div class="modal" style="width: 600px;">
+            <div class="modal-header">
+                <h3 id="allocationTitle">频道分配</h3>
+                <button class="modal-close" onclick="closeAllocationModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #f6f7f8; border-radius: 4px; padding: 12px 14px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span>频道名称：</span>
+                        <span style="color: #ff0000;">▶</span>
+                        <span id="allocationChannelName">-</span>
+                        <span style="color: #8c8c9a;" id="allocationPlatform">(-)</span>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">分配套餐 <span style="color: #f5222d;">*</span></label>
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="package" value="1" style="accent-color: #9155FD;">
+                            <span>自运营</span>
+                            <span style="color: #8c8c9a;">(待分配)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="package" value="2" style="accent-color: #9155FD;">
+                            <span>代运营</span>
+                            <span style="color: #8c8c9a;">(待分配)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">分配团队 <span style="color: #f5222d;">*</span></label>
+                    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="team" value="jc_mcn" style="accent-color: #9155FD;">
+                            <span>YT事业部</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="team" value="hz_fb" style="accent-color: #9155FD;">
+                            <span>FB事业部</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="team" value="hz_slice" style="accent-color: #9155FD;">
+                            <span>影视事业部</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" name="team" value="brand" style="accent-color: #9155FD;">
+                            <span>品牌市场部</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" onclick="closeAllocationModal()">取消</button>
+                <button class="btn btn-primary" onclick="confirmAllocation()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 作品详情抒屉 -->
+    <div class="drawer-overlay" id="detailDrawer" onclick="if(event.target === this) closeDetailDrawer()">
+        <div class="drawer detail-drawer">
+            <div class="drawer-header-info">
+                <div class="drawer-header-main">
+                    <div class="drawer-header-left">
+                        <div class="drawer-title-icon">🎬</div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:20px;font-weight:600;color:#1a1a2e;margin-bottom:8px;" id="drawerTitle">作品名称</div>
+                            <!-- 标签行 -->
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;" id="drawerTagsRow"></div>
+                            <!-- 简介展开收起 -->
+                            <div id="drawerDescWrapper" style="font-size:13px;color:#606068;line-height:1.7;">
+                                <span id="drawerDescText" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;"></span>
+                                <span id="drawerDescToggle" onclick="toggleDesc()" style="color:#9155FD;cursor:pointer;font-size:12px;white-space:nowrap;display:none;">展开</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="drawer-actions" style="flex-shrink:0;">
+                        <button class="btn btn-default" id="editBtn" onclick="openEditModal()">编辑</button>
+                        <button class="drawer-close" onclick="closeDetailDrawer()">×</button>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-tabs">
+                <button class="drawer-tab active" data-tab="overview" onclick="switchDetailTab('overview')">概览</button>
+                <button class="drawer-tab" data-tab="changes" onclick="switchDetailTab('changes')">修改记录</button>
+            </div>
+            <div class="drawer-body">
+                <div id="tab-overview" class="tab-content">
+                    <div class="info-card">
+                        <div class="info-card-title">基本信息</div>
+                        <div class="info-grid-3" id="basicInfo"></div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-title">合约信息</div>
+                        <div style="display:flex;gap:24px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #e0e0e0;">
+                            <div class="info-row-item"><span class="info-row-label">引进模式：</span><span class="info-row-value" id="detailImportMode">-</span></div>
+                            <div class="info-row-item"><span class="info-row-label">签约主体：</span><span class="info-row-value" id="detailSigningEntity">-</span></div>
+                            <div class="info-row-item"><span class="info-row-label">签约链接：</span><span class="info-row-value link" id="detailContractLink">-</span></div>
+                        </div>
+                        <div class="platform-list" id="platformList"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 16px;">
+                        <div class="info-card" style="margin-bottom:0;">
+                            <div class="info-card-title">发布配置</div>
+                            <div id="publishInfo"></div>
+                        </div>
+                        <div class="info-card" style="margin-bottom:0;">
+                            <div class="info-card-title">语种配置</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:10px;font-weight:500;">字幕语种</div>
+                                    <div id="subtitleInfo"></div>
+                                </div>
+                                <div>
+                                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:10px;font-weight:500;">配音语种</div>
+                                    <div id="dubbingInfo"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-card-title">特殊运作要求及处理方式</div>
+                        <div style="padding:16px;background:#f8f9fa;border-radius:6px;min-height:60px;">
+                            <span class="info-row-value" id="specialReq">无</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-changes" class="tab-content" style="display:none;">
+                    <div class="info-card">
+                        <div class="info-card-title">修改记录</div>
+                        <div id="changeTimeline"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据
+        const mockData = [
+            {
+                id: 1,
+                name: '复仇的玫瑰',
+                copyrightHolder: '星空传媒有限公司',
+                cpType: 1,
+                cpTypeText: '个人',
+                businessName: '张三',
+                signCompanyName: '北京XX科技有限公司',
+                sharePattern: '独家',
+                categoryStr: '短剧/都市/爱情',
+                episodeCount: 100,
+                tags: ['甜宠', '逆袭', '都市'],
+                gender: 'female',
+                description: '灰姑娘林晓因一次意外邂逅了冷漠霸道的总裁陆深，两人从针锋相对到渐生情愫，经历重重阻碍后携手共进的都市爱情故事。',
+                deliveryReceiptNum: 'YY20240315001',
+                currentChannels: ['短剧频道A', '精品短剧频道'],
+                createdAt: '2024-03-15 10:30:00',
+                expiringSoon: true,
+                storageUrl: 'https://storage.example.com/work1',
+                aliasList: ['霸道总裁爱上我', '总裁系列'],
+                internalPublish: true,
+                newSignChannelVos: [
+                    { authorizePlatform: 'YouTube', authLimitStart: '2024-01-01', authLimitEnd: '2024-12-31', authorizeExpireLabel: '即将到期', servicePage: [{ servicePageName: '自运营', contractStatusText: '(已审核)' }], contractStatus: '0' },
+                    { authorizePlatform: 'Facebook', authLimitStart: '2024-01-01', authLimitEnd: '2024-12-31', authorizeExpireLabel: '', servicePage: [{ servicePageName: '代运营', contractStatusText: '(已审核)' }], contractStatus: '0' }
+                ]
+            },
+            {
+                id: 2,
+                name: '霸道总裁爱上我',
+                copyrightHolder: '梦幻影业',
+                cpType: 2,
+                cpTypeText: '企业',
+                businessName: '王五',
+                customerName: '赵六',
+                signCompanyName: '上海YY媒体公司',
+                sharePattern: '非独家',
+                categoryStr: '短剧/都市/爱情',
+                episodeCount: 80,
+                tags: ['甜宠', '霸总', '虐恋'],
+                gender: 'female',
+                description: '一个平凡女孩与霸道总裁之间的虐恋故事，爱而不得，得而珍惜，讲述了在爱情与事业之间如何抉择的动人故事。',
+                deliveryReceiptNum: '',
+                currentChannels: ['短剧频道B'],
+                createdAt: '2024-03-14 15:20:00',
+                expiringSoon: false,
+                internalPublish: false,
+                newSignChannelVos: [
+                    { authorizePlatform: 'YouTube', authLimitStart: '2024-02-01', authLimitEnd: '2025-01-31', authorizeExpireLabel: '', servicePage: [{ servicePageName: '自运营', contractStatusText: '(已审核)' }], contractStatus: '0' }
+                ]
+            },
+            {
+                id: 3,
+                name: '我在天安当狱卒',
+                copyrightHolder: '紫云文化',
+                cpType: 3,
+                cpTypeText: '境外个人',
+                businessName: '孙七',
+                customerName: '周八',
+                signCompanyName: '广州ZZ文化公司',
+                sharePattern: '独家',
+                categoryStr: '短剧/古装/悬疑',
+                episodeCount: 120,
+                tags: ['悬疑', '古装', '探案'],
+                gender: 'male',
+                description: '大唐年间，少年狱卒卷入宫廷秘案，凭借过人智慧一步步揭开隐藏多年的惊天阴谋，最终还天下人以公道。',
+                deliveryReceiptNum: 'YY20240313002',
+                currentChannels: ['古装短剧频道', '悬疑短剧频道'],
+                createdAt: '2024-03-13 09:15:00',
+                expiringSoon: false,
+                internalPublish: true,
+                newSignChannelVos: [
+                    { authorizePlatform: 'YouTube', authLimitStart: '2024-03-01', authLimitEnd: '2024-08-31', authorizeExpireLabel: '已过期', servicePage: [{ servicePageName: '代运营', contractStatusText: '(待审核)' }], contractStatus: '4' },
+                    { authorizePlatform: 'Facebook', authLimitStart: '2024-03-01', authLimitEnd: '2024-08-31', authorizeExpireLabel: '已过期', servicePage: [{ servicePageName: '代运营', contractStatusText: '(待审核)' }], contractStatus: '4' }
+                ]
+            }
+        ];
+
+        let currentTab = '0';
+        let selectedRows = [];
+        let currentMenu = 'handover';
+
+        // 语种选项 —— 从语种配置表动态读取（原型中使用固定数据模拟，实际由接口返回）
+        let LANGUAGE_OPTIONS = [];
+        const LANGUAGE_OPTIONS_FALLBACK = [
+            { value: 'zh-CN', label: '简体中文' },
+            { value: 'zh-TW', label: '繁体中文' },
+            { value: 'en', label: '英语' },
+            { value: 'ja', label: '日语' },
+            { value: 'ko', label: '韩语' },
+            { value: 'es', label: '西班牙语' },
+            { value: 'fr', label: '法语' },
+            { value: 'de', label: '德语' },
+            { value: 'pt', label: '葡萄牙语' },
+            { value: 'ar', label: '阿拉伯语' },
+            { value: 'th', label: '泰语' },
+            { value: 'vi', label: '越南语' },
+            { value: 'id', label: '印尼语' },
+            { value: 'ru', label: '俄语' }
+        ];
+        // 原型模拟：直接使用兜底数据（实际应调用语种配置表接口获取）
+        LANGUAGE_OPTIONS = LANGUAGE_OPTIONS_FALLBACK;
+
+        // 交接单数据
+        let handoverOrders = [
+            { id: 1, orderNo: 'JH20240315001', works: '复仇的玫瑰', status: '待审核', creator: '张三', createTime: '2024-03-15 10:30:00', requirements: '需要在首发后7天内完成各平台上线' },
+            { id: 2, orderNo: 'JH20240315002', works: '霸道总裁爱上我', status: '已提交', creator: '李四', createTime: '2024-03-14 16:45:00', requirements: '无特殊要求' }
+        ];
+        let handoverGroupCount = 0;
+        let editingHandoverId = null;
+        let remarkHandoverId = null;
+        let currentHandoverOrder = null;
+
+        // 搜索配置
+        const searchConfig = {
+            '0': [
+                { props: 'name', label: '作品名', type: 'text', defaultShow: true },
+                { props: 'copyrightHolder', label: 'CP名称', type: 'text', defaultShow: true },
+                { props: 'categoryValueList', label: '垂类', type: 'select', options: ['短剧', '电影', '综艺'], defaultShow: true },
+                { props: 'packageId', label: '套餐名称', type: 'select', options: ['自运营', '代运营', '联合运营'], defaultShow: false },
+                { props: 'cpType', label: 'CP类型', type: 'select', options: ['个人', '企业', '境外个人', '境外企业'], defaultShow: false },
+                { props: 'companyName', label: '签约主体', type: 'select', options: ['北京XX科技', '上海YY媒体', '广州ZZ文化'], defaultShow: false },
+                { props: 'sharePattern', label: '引进模式', type: 'select', options: ['独家', '非独家', '买断'], defaultShow: false },
+                { props: 'contractStatus', label: '合约状态', type: 'select', options: ['待审核', '已审核', '已拒绝'], defaultShow: false },
+                { props: 'authorizeExpireType', label: '授权到期', type: 'select', options: ['即将到期', '已过期', '30天内'], defaultShow: false }
+            ]
+        };
+
+        let isSearchCollapsed = true;
+
+        // 初始化
+        function init() {
+            renderSearchForm();
+            renderTable();
+            renderPagination();
+        }
+
+        // 初始化
+        function init() {
+            renderSearchForm();
+            renderTable();
+            renderPagination();
+            renderHandoverTable();
+        }
+
+        // 菜单切换
+        function switchMenu(menu) {
+            currentMenu = menu;
+            
+            // 更新侧边栏选中状态
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('onclick')?.includes(menu)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 切换页面显示
+            if (menu === 'contract') {
+                document.getElementById('contractPage').style.display = 'block';
+                document.getElementById('handoverPage').style.display = 'none';
+                document.getElementById('pageTitle').textContent = '签约内容';
+            } else if (menu === 'handover') {
+                document.getElementById('contractPage').style.display = 'none';
+                document.getElementById('handoverPage').style.display = 'block';
+                document.getElementById('pageTitle').textContent = '交接单管理';
+                renderHandoverTable();
+            }
+        }
+
+        // 交接单功能
+        function renderHandoverTable() {
+            document.getElementById('handoverTableBody').innerHTML = handoverOrders.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td><span class="table-link" onclick="openHandoverDetailDrawer(${item.id})">${item.orderNo}</span></td>
+                    <td>${item.works}</td>
+                    <td><span class="tag tag-${item.status === '待审核' ? 'warning' : 'success'}">${item.status}</span></td>
+                    <td>${item.creator}</td>
+                    <td>${item.createTime}</td>
+                    <td>
+                        <button class="btn btn-text" onclick="openHandoverEditModal(${item.id})">编辑</button>
+                        <button class="btn btn-text" onclick="openHandoverRemarkModal(${item.id})">备注</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openHandoverDetailDrawer(id) {
+            currentHandoverOrder = handoverOrders.find(h => h.id === id);
+            if (!currentHandoverOrder) return;
+
+            document.getElementById('handoverDetailOrderNo').textContent = currentHandoverOrder.orderNo;
+            document.getElementById('handoverDetailCreator').textContent = currentHandoverOrder.creator;
+            document.getElementById('handoverDetailTime').textContent = currentHandoverOrder.createTime;
+            document.getElementById('handoverDetailRequirements').textContent = currentHandoverOrder.requirements || '-';
+            document.getElementById('handoverDetailPlayReq').textContent = currentHandoverOrder.playReq || '-';
+            document.getElementById('handoverDetailAccountOwner').textContent = currentHandoverOrder.accountOwner || '归属客户';
+            document.getElementById('handoverDetailAttachment').textContent = currentHandoverOrder.attachment || '-';
+
+            // 作品表格（列：作品名称/内部是否可发布/首发时间/频道发布限制/字幕可发/字幕禁发/配音可发/配音禁发）
+            const works = [{
+                name: currentHandoverOrder.works,
+                internalPublish: currentHandoverOrder.internalPublish === false ? '不可发布' : '可发布',
+                firstTime: currentHandoverOrder.firstPublishTime || '-',
+                channelLimit: currentHandoverOrder.channelLimit || '无限制',
+                subtitleAllow: currentHandoverOrder.allowedLangs || '全部',
+                subtitleForbid: currentHandoverOrder.forbiddenLangs || '-',
+                dubAllow: currentHandoverOrder.dubAllowLangs || '-',
+                dubForbid: currentHandoverOrder.dubForbidLangs || '-'
+            }];
+            document.getElementById('handoverDetailWorksBody').innerHTML = works.map(w => `
+                <tr>
+                    <td><span style="color:#9155FD;cursor:pointer;">${w.name}</span></td>
+                    <td>${w.internalPublish}</td>
+                    <td>${w.firstTime}</td>
+                    <td>${w.channelLimit}</td>
+                    <td>${w.subtitleAllow}</td>
+                    <td>${w.subtitleForbid}</td>
+                    <td>${w.dubAllow}</td>
+                    <td>${w.dubForbid}</td>
+                </tr>
+            `).join('');
+
+            // 备注信息空状态
+            document.getElementById('handoverDetailRemarkEmpty').style.display = 'flex';
+            document.getElementById('handoverDetailRemarkList').style.display = 'none';
+
+            document.getElementById('handoverDetailDrawer').classList.add('active');
+        }
+
+        function closeHandoverDetailDrawer() {
+            document.getElementById('handoverDetailDrawer').classList.remove('active');
+        }
+
+        function openHandoverModal() {
+            document.getElementById('handoverModal').classList.add('active');
+            handoverGroupCount = 0;
+            document.getElementById('handoverGroups').innerHTML = '';
+            addHandoverGroup();
+        }
+
+        function closeHandoverModal() {
+            document.getElementById('handoverModal').classList.remove('active');
+        }
+
+        function addHandoverGroup() {
+            handoverGroupCount++;
+            const groupId = 'group_' + Date.now();
+            const div = document.createElement('div');
+            div.className = 'handover-group';
+            div.dataset.groupId = groupId;
+            div.innerHTML = `
+                <div class="group-header">
+                    <span class="group-title">交接组${handoverGroupCount}</span>
+                    ${handoverGroupCount > 1 ? '<button class="btn btn-text" onclick="this.closest(\'.handover-group\').remove()" style="color:#f5222d;font-size:12px;">删除</button>' : ''}
+                </div>
+                <div class="group-tip">请将相同交接信息的频道/作品进行同组交接！</div>
+                <div class="form-item full-width" style="margin-bottom:12px;">
+                    <label class="form-label required">频道/作品</label>
+                    <input class="form-input" placeholder="请输入频道或作品名称">
+                </div>
+                <div style="border-top:1px dashed #e8e8e8;padding-top:12px;margin-top:12px;">
+                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:10px;font-weight:500;">发布配置</div>
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">内部是否可发布</label>
+                        <div style="display:flex;gap:12px;">
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="internal_${groupId}" value="true"> 可发布</label>
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="internal_${groupId}" value="false" checked> 不可发布</label>
+                        </div>
+                    </div>
+                    <div id="publishConfig_${groupId}" style="display:none;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">频道发布限制</label>
+                            <div style="display:flex;gap:12px;">
+                                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="channel_${groupId}" value="unlimited" checked> 无限制</label>
+                                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="channel_${groupId}" value="cp_only"> 仅CP指定频道</label>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">首发时间</label>
+                            <div style="display:flex;gap:12px;align-items:center;">
+                                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="anytime" checked> 随时可发布</label>
+                                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="custom"> 自定义时间</label>
+                                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="waiting"> 暂不可发布，等待上线通知</label>
+                                <input class="form-input" type="datetime-local" style="height:28px;font-size:12px;flex:1;display:none;" id="timeInput_${groupId}">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">字幕语种</label>
+                            <div class="checkbox-select" id="subAllowWrapper_${groupId}">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('subAllowWrapper_${groupId}')">
+                                    <span class="checkbox-select-text">请选择可发字幕语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `
+                                        <label class="checkbox-select-option">
+                                            <input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('subAllowWrapper_${groupId}')">
+                                            <span>${l.label}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="checkbox-select" id="subForbidWrapper_${groupId}" style="margin-top:8px;">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('subForbidWrapper_${groupId}')">
+                                    <span class="checkbox-select-text">请选择禁发字幕语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `
+                                        <label class="checkbox-select-option">
+                                            <input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('subForbidWrapper_${groupId}')">
+                                            <span>${l.label}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <button class="btn btn-default" style="font-size:12px;padding:4px 10px;height:auto;" onclick="syncSubtitleToDubbing('${groupId}')">同步到配音</button>
+                                <span style="font-size:11px;color:#8c8c9a;margin-left:6px;">将字幕可发/禁发同步至配音</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">配音语种</label>
+                            <div class="checkbox-select" id="dubAllowWrapper_${groupId}">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('dubAllowWrapper_${groupId}')">
+                                    <span class="checkbox-select-text">请选择可发配音语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `
+                                        <label class="checkbox-select-option">
+                                            <input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('dubAllowWrapper_${groupId}')">
+                                            <span>${l.label}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="checkbox-select" id="dubForbidWrapper_${groupId}" style="margin-top:8px;">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('dubForbidWrapper_${groupId}')">
+                                    <span class="checkbox-select-text">请选择禁发配音语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `
+                                        <label class="checkbox-select-option">
+                                            <input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('dubForbidWrapper_${groupId}')">
+                                            <span>${l.label}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div><!-- /publishConfig -->
+                </div>
+            `;
+            document.getElementById('handoverGroups').appendChild(div);
+
+            // 内部可发布联动
+            div.querySelectorAll(`input[name="internal_${groupId}"]`).forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const configDiv = document.getElementById('publishConfig_' + groupId);
+                    if (this.value === 'true') {
+                        configDiv.style.display = 'block';
+                    } else {
+                        configDiv.style.display = 'none';
+                        const anytimeR = div.querySelector(`input[name="time_${groupId}"][value="anytime"]`);
+                        if (anytimeR) { anytimeR.checked = true; const ti = document.getElementById('timeInput_' + groupId); if(ti) ti.style.display='none'; }
+                        const unlimitedR = div.querySelector(`input[name="channel_${groupId}"][value="unlimited"]`);
+                        if (unlimitedR) unlimitedR.checked = true;
+                        ['subAllowWrapper_','subForbidWrapper_','dubAllowWrapper_','dubForbidWrapper_'].forEach(p => {
+                            const w = document.getElementById(p + groupId);
+                            if (w) { w.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false); updateCheckboxSelectText(p + groupId); }
+                        });
+                    }
+                });
+            });
+
+            // 绑定时间选择事件
+            div.querySelectorAll(`input[name="time_${groupId}"]`).forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('timeInput_' + groupId).style.display = this.value === 'custom' ? 'block' : 'none';
+                });
+            });
+        }
+
+        function saveHandover() {
+            alert('保存草稿成功');
+            closeHandoverModal();
+        }
+
+        function submitHandover() {
+            alert('提交成功');
+            closeHandoverModal();
+        }
+
+        // 编辑交接单
+        function openHandoverEditModal(id) {
+            editingHandoverId = id;
+            const order = handoverOrders.find(h => h.id === id);
+            if (!order) return;
+
+            document.getElementById('handoverEditModal').classList.add('active');
+            document.getElementById('handoverEditGroups').innerHTML = '';
+
+            // 按照历史数据渲染交接组（编辑态不可新增/删除交接组）
+            const groups = order.groups && order.groups.length > 0
+                ? order.groups
+                : [{ work: order.works, internalPublish: true, channelLimit: 'unlimited', timeType: 'anytime' }];
+
+            groups.forEach((g, index) => addHandoverEditGroup(g, index + 1));
+        }
+
+        function addHandoverEditGroup(groupData, groupIndex) {
+            const groupId = 'edit_group_' + Date.now() + '_' + groupIndex;
+            const div = document.createElement('div');
+            div.className = 'handover-group';
+            div.innerHTML = `
+                <div class="group-header">
+                    <span class="group-title">交接组${groupIndex}</span>
+                </div>
+                <div class="group-tip">请将相同交接信息的频道/作品进行同组交接！</div>
+                <div class="form-item" style="margin-bottom:12px;">
+                    <label class="form-label required">频道/作品</label>
+                    <input class="form-input" id="editWork_${groupId}" placeholder="请输入频道或作品名称" value="${groupData ? groupData.work || '' : ''}">
+                </div>
+                <div style="border-top:1px dashed #e8e8e8;padding-top:12px;margin-top:12px;">
+                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:10px;font-weight:500;">发布配置</div>
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">内部是否可发布</label>
+                        <div style="display:flex;gap:12px;">
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;">
+                                <input type="radio" name="internal_${groupId}" value="true" ${!groupData || groupData.internalPublish ? 'checked' : ''}> 可发布
+                            </label>
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;">
+                                <input type="radio" name="internal_${groupId}" value="false" ${groupData && !groupData.internalPublish ? 'checked' : ''}> 不可发布
+                            </label>
+                        </div>
+                    </div>
+                    <div id="publishConfigEdit_${groupId}" style="display:${!groupData || groupData.internalPublish ? 'block' : 'none'};">    
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div>
+                                <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">频道发布限制</label>
+                                <div style="display:flex;gap:12px;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="channel_${groupId}" value="unlimited" ${!groupData || groupData.channelLimit !== 'cp_only' ? 'checked' : ''}> 无限制</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="channel_${groupId}" value="cp_only" ${groupData && groupData.channelLimit === 'cp_only' ? 'checked' : ''}> 仅CP指定频道</label>
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">首发时间</label>
+                                <div style="display:flex;gap:12px;align-items:center;">
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="anytime" ${!groupData || groupData.timeType !== 'custom' ? 'checked' : ''}> 随时可发布</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="custom" ${groupData && groupData.timeType === 'custom' ? 'checked' : ''}> 自定义时间</label>
+                                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;"><input type="radio" name="time_${groupId}" value="waiting" ${groupData && groupData.timeType === 'waiting' ? 'checked' : ''}> 暂不可发布，等待上线通知</label>
+                                    <input class="form-input" type="datetime-local" style="height:28px;font-size:12px;flex:1;display:${groupData && groupData.timeType === 'custom' ? 'block' : 'none'};" id="editTimeInput_${groupId}" value="${groupData && groupData.customTime ? groupData.customTime : ''}">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">字幕语种</label>
+                            <div class="checkbox-select" id="editSubAllow_${groupId}">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('editSubAllow_${groupId}')">
+                                    <span class="checkbox-select-text">请选择可发字幕语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `<label class="checkbox-select-option"><input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('editSubAllow_${groupId}')"><span>${l.label}</span></label>`).join('')}
+                                </div>
+                            </div>
+                            <div class="checkbox-select" id="editSubForbid_${groupId}" style="margin-top:8px;">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('editSubForbid_${groupId}')">
+                                    <span class="checkbox-select-text">请选择禁发字幕语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `<label class="checkbox-select-option"><input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('editSubForbid_${groupId}')"><span>${l.label}</span></label>`).join('')}
+                                </div>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <button class="btn btn-default" style="font-size:12px;padding:4px 10px;height:auto;" onclick="syncSubtitleToDubbingEdit('${groupId}')">同步到配音</button>
+                                <span style="font-size:11px;color:#8c8c9a;margin-left:6px;">将字幕可发/禁发同步至配音</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:12px;color:#606068;display:block;margin-bottom:6px;">配音语种</label>
+                            <div class="checkbox-select" id="editDubAllow_${groupId}">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('editDubAllow_${groupId}')">
+                                    <span class="checkbox-select-text">请选择可发配音语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `<label class="checkbox-select-option"><input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('editDubAllow_${groupId}')"><span>${l.label}</span></label>`).join('')}
+                                </div>
+                            </div>
+                            <div class="checkbox-select" id="editDubForbid_${groupId}" style="margin-top:8px;">
+                                <div class="checkbox-select-trigger" onclick="toggleCheckboxSelect('editDubForbid_${groupId}')">
+                                    <span class="checkbox-select-text">请选择禁发配音语种</span>
+                                    <span class="checkbox-select-arrow">▼</span>
+                                </div>
+                                <div class="checkbox-select-dropdown">
+                                    ${LANGUAGE_OPTIONS.map(l => `<label class="checkbox-select-option"><input type="checkbox" value="${l.value}" onchange="updateCheckboxSelectText('editDubForbid_${groupId}')"><span>${l.label}</span></label>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div><!-- /publishConfigEdit -->
+                </div>
+            `;
+            document.getElementById('handoverEditGroups').appendChild(div);
+
+            // 内部可发布联动
+            div.querySelectorAll(`input[name="internal_${groupId}"]`).forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const configDiv = document.getElementById('publishConfigEdit_' + groupId);
+                    if (this.value === 'true') {
+                        configDiv.style.display = 'block';
+                    } else {
+                        configDiv.style.display = 'none';
+                        const anytimeR = div.querySelector(`input[name="time_${groupId}"][value="anytime"]`);
+                        if (anytimeR) { anytimeR.checked = true; const ti = document.getElementById('editTimeInput_' + groupId); if(ti) ti.style.display='none'; }
+                        ['editSubAllow_','editSubForbid_','editDubAllow_','editDubForbid_'].forEach(p => {
+                            const w = document.getElementById(p + groupId);
+                            if (w) { w.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false); updateCheckboxSelectText(p + groupId); }
+                        });
+                    }
+                });
+            });
+
+            // 绑定时间切换事件
+            div.querySelectorAll(`input[name="time_${groupId}"]`).forEach(radio => {
+                radio.addEventListener('change', function() {
+                    document.getElementById('editTimeInput_' + groupId).style.display = this.value === 'custom' ? 'block' : 'none';
+                });
+            });
+        }
+
+        function closeHandoverEditModal() {
+            document.getElementById('handoverEditModal').classList.remove('active');
+            editingHandoverId = null;
+        }
+
+        function saveHandoverEdit() {
+            alert('保存并重新交接成功');
+            closeHandoverEditModal();
+            renderHandoverTable();
+        }
+
+        // 同步到配音（创建弹窗）
+        function syncSubtitleToDubbing(groupId) {
+            function syncWrapper(srcId, dstId) {
+                const src = document.getElementById(srcId);
+                const dst = document.getElementById(dstId);
+                if (!src || !dst) return;
+                const srcChecked = Array.from(src.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+                dst.querySelectorAll('input[type="checkbox"]').forEach(c => {
+                    c.checked = srcChecked.includes(c.value);
+                });
+                updateCheckboxSelectText(dstId);
+            }
+            syncWrapper('subAllowWrapper_' + groupId, 'dubAllowWrapper_' + groupId);
+            syncWrapper('subForbidWrapper_' + groupId, 'dubForbidWrapper_' + groupId);
+        }
+
+        // 同步到配音（编辑弹窗）
+        function syncSubtitleToDubbingEdit(groupId) {
+            function syncWrapper(srcId, dstId) {
+                const src = document.getElementById(srcId);
+                const dst = document.getElementById(dstId);
+                if (!src || !dst) return;
+                const srcChecked = Array.from(src.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+                dst.querySelectorAll('input[type="checkbox"]').forEach(c => {
+                    c.checked = srcChecked.includes(c.value);
+                });
+                updateCheckboxSelectText(dstId);
+            }
+            syncWrapper('editSubAllow_' + groupId, 'editDubAllow_' + groupId);
+            syncWrapper('editSubForbid_' + groupId, 'editDubForbid_' + groupId);
+        }
+
+        // 备注功能
+        function openHandoverRemarkModal(id) {
+            remarkHandoverId = id;
+            const order = handoverOrders.find(h => h.id === id);
+            if (order) {
+                document.getElementById('handoverRemarkText').value = order.remark || '';
+            }
+            document.getElementById('handoverRemarkModal').classList.add('active');
+        }
+
+        function closeHandoverRemarkModal() {
+            document.getElementById('handoverRemarkModal').classList.remove('active');
+            remarkHandoverId = null;
+        }
+
+        function saveHandoverRemark() {
+            if (!remarkHandoverId) return;
+            const remark = document.getElementById('handoverRemarkText').value;
+            const order = handoverOrders.find(h => h.id === remarkHandoverId);
+            if (order) {
+                order.remark = remark;
+            }
+            alert('备注保存成功');
+            closeHandoverRemarkModal();
+        }
+
+        // 复选框下拉选择器函数
+        function toggleCheckboxSelect(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            const isOpen = wrapper.classList.contains('open');
+            document.querySelectorAll('.checkbox-select.open').forEach(el => {
+                if (el.id !== wrapperId) el.classList.remove('open');
+            });
+            wrapper.classList.toggle('open', !isOpen);
+        }
+
+        function updateCheckboxSelectText(wrapperId) {
+            const wrapper = document.getElementById(wrapperId);
+            const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]:checked');
+            const textEl = wrapper.querySelector('.checkbox-select-text');
+            
+            if (checkboxes.length === 0) {
+                textEl.textContent = wrapperId.includes('Allow') ? '请选择可发语种' : '请选择禁发语种';
+                textEl.style.color = '#8c8c9a';
+            } else if (checkboxes.length === 1) {
+                textEl.textContent = checkboxes[0].nextElementSibling.textContent;
+                textEl.style.color = '#1a1a2e';
+            } else {
+                textEl.textContent = `已选择 ${checkboxes.length} 项`;
+                textEl.style.color = '#1a1a2e';
+            }
+        }
+
+        // 点击外部关闭下拉框
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.checkbox-select')) {
+                document.querySelectorAll('.checkbox-select.open').forEach(el => {
+                    el.classList.remove('open');
+                });
+            }
+        });
+
+        // 渲染搜索表单
+        function renderSearchForm() {
+            const configs = searchConfig[currentTab] || searchConfig['0'];
+            const html = configs.map((item, index) => `
+                <div class="search-item" style="${isSearchCollapsed && !item.defaultShow ? 'display: none;' : ''}" data-index="${index}">
+                    <label class="search-label">${item.label}</label>
+                    ${item.type === 'select' 
+                        ? `<select class="search-select" id="search_${item.props}">
+                            <option value="">全部</option>
+                            ${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                           </select>`
+                        : `<input type="text" class="search-input" id="search_${item.props}" placeholder="请输入${item.label}">`
+                    }
+                </div>
+            `).join('');
+            document.getElementById('searchGrid').innerHTML = html;
+            
+            // 更新展开/收起按钮文字
+            const btn = document.getElementById('collapseBtn');
+            if (btn) {
+                btn.innerHTML = `${isSearchCollapsed ? '展开' : '收起'} <span style="display: inline-block; transition: transform 0.3s; ${isSearchCollapsed ? '' : 'transform: rotate(180deg);'}">▼</span>`;
+            }
+        }
+
+        // 切换搜索区展开/收起
+        function toggleSearchCollapse() {
+            isSearchCollapsed = !isSearchCollapsed;
+            renderSearchForm();
+        }
+
+                // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const rows = [];
+            mockData.forEach(row => {
+                const channelHtml = row.currentChannels && row.currentChannels.length
+                    ? '<div style="display:flex;align-items:center;gap:4px;"><span style="color:#ff0000;font-size:10px;">&#9658;</span><span>' + row.currentChannels[0] + '</span>' + (row.currentChannels.length > 1 ? '<span class="table-link" title="' + row.currentChannels.join('\n') + '" style="color:#ccc;cursor:pointer;">...</span>' : '') + '</div>'
+                    : '-';
+                const deliveryHtml = row.deliveryReceiptNum
+                    ? '<span class="table-link" onclick="openDeliveryDrawer(\'' + row.deliveryReceiptNum + '\')">' + row.deliveryReceiptNum + '</span>'
+                    : '-';
+                // 主行
+                rows.push('<tr class="row-main" data-id="' + row.id + '">');
+                // 展开/收起按鈕
+                rows.push('<td style="text-align:center;vertical-align:middle;padding:0;width:32px;"><span onclick="toggleExpand(' + row.id + ')" id="expandIcon_' + row.id + '" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;border:1px solid #d9d9d9;background:#fff;cursor:pointer;font-size:14px;color:#606068;user-select:none;">+</span></td>');
+                rows.push('<td><input type="checkbox" class="row-checkbox" onclick="toggleRow(' + row.id + ')"></td>');
+                rows.push('<td><div style="display:flex;align-items:center;gap:4px;">' + (row.storageUrl ? '<span class="table-link" onclick="openStorageUrl(\'' + row.storageUrl + '\')" title="查看入库链接">📎</span>' : '') + '<span class="table-link" onclick="openDetailDrawer(' + row.id + ')">' + row.name + '</span>' + (row.expiringSoon ? '<span class="expire-tag">即将到期</span>' : '') + '</div></td>');
+                rows.push('<td>' + (row.copyrightHolder || '-') + '</td>');
+                rows.push('<td><span class="tag tag-primary">' + (row.cpTypeText || '-') + '</span></td>');
+                rows.push('<td style="font-size:13px;">' + (row.signCompanyName || '-') + '</td>');
+                rows.push('<td>' + (row.sharePattern ? '<span class="tag tag-default" style="background:#f5f5f5;color:#606068;">' + row.sharePattern + '</span>' : '-') + '</td>');
+                rows.push('<td>' + (row.episodeCount ? row.episodeCount + '集' : '-') + '</td>');
+                // 内部是否可发布
+                const pubHtml = row.internalPublish
+                    ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#1890ff;display:inline-block;"></span><span style="color:#1890ff;font-weight:500;">可发布</span></span>'
+                    : '<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#fa8c16;display:inline-block;"></span><span style="color:#fa8c16;font-weight:500;">不可发布</span></span>';
+                rows.push('<td>' + pubHtml + '</td>');
+                const staffInline = [row.businessName ? '商务：' + row.businessName : '', row.customerName ? '客服：' + row.customerName : ''].filter(Boolean).join('<span style="margin:0 8px;color:#e8e8e8;">|</span>');
+                rows.push('<td style="font-size:12px;color:#606068;white-space:nowrap;">' + (staffInline || '-') + '</td>');
+                rows.push('<td>' + row.createdAt + '</td>');
+                rows.push('<td><div style="display:flex;gap:8px;"><span class="table-link" onclick="openSettingModal(' + row.id + ')">设置</span><span class="table-link" onclick="openTimelineDrawer(' + row.id + ')">时间线</span></div></td>');
+                rows.push('</tr>');
+                // 展开内容行
+                rows.push('<tr class="expand-row" id="expand_' + row.id + '" style="display:none;"><td colspan="9"><div class="expand-content"><table class="sub-table"><thead><tr><th style="width:60px;">序号</th><th>授权平台</th><th>授权期限</th><th>套餐</th><th>合约状态</th><th>操作</th></tr></thead><tbody>');
+                row.newSignChannelVos.forEach(function(item, idx) {
+                                    const statusTag = item.contractStatus === '0' ? 'tag-success' : item.contractStatus === '4' ? 'tag-warning' : 'tag-error';
+                    const statusText = item.contractStatus === '0' ? '生效中' : item.contractStatus === '4' ? '已过期' : '已解约';
+                    const distHtml = (item.contractStatus === '0')
+                        ? '<span class="table-link" onclick="handleDistribution(' + row.id + ', \'' + item.authorizePlatform + '\')">分配</span>'
+                        : '<span style="color:#bfbfbf;cursor:not-allowed;">分配</span>';
+                    rows.push('<tr><td>' + (idx+1) + '</td><td>' + item.authorizePlatform + '</td><td><div style="display:flex;align-items:center;gap:8px;"><span>' + item.authLimitStart + ' 至 ' + item.authLimitEnd + '</span></div></td><td>' + item.servicePage.map(function(s){return s.servicePageName;}).join('、') + '</td><td><span class="tag ' + statusTag + '">' + statusText + '</span></td><td>' + distHtml + '</td></tr>');
+                });
+                rows.push('</tbody></table></div></td></tr>');
+            });
+            tbody.innerHTML = rows.join('');
+            document.getElementById('totalCount').textContent = mockData.length;
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const btns = [];
+            btns.push(`<button class="page-btn" disabled>上一页</button>`);
+            btns.push(`<button class="page-btn active">1</button>`);
+            btns.push(`<button class="page-btn" disabled>下一页</button>`);
+            document.getElementById('paginationBtns').innerHTML = btns.join('');
+        }
+
+        // Tab切换
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            renderSearchForm();
+            renderTable();
+        }
+
+        // 展开/收起
+        function toggleExpand(id) {
+            const expandRow = document.getElementById('expand_' + id);
+            const icon = document.getElementById('expandIcon_' + id);
+            if (expandRow.style.display === 'none') {
+                expandRow.style.display = 'table-row';
+                icon.textContent = '-';
+                icon.style.color = '#9155FD';
+                icon.style.borderColor = '#9155FD';
+            } else {
+                expandRow.style.display = 'none';
+                icon.textContent = '+';
+                icon.style.color = '#606068';
+                icon.style.borderColor = '#d9d9d9';
+            }
+        }
+
+        // 选择行
+        function toggleRow(id) {
+            const index = selectedRows.indexOf(id);
+            if (index > -1) {
+                selectedRows.splice(index, 1);
+            } else {
+                selectedRows.push(id);
+            }
+        }
+
+        // 全选
+        function toggleSelectAll() {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            const selectAll = document.getElementById('selectAll').checked;
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll;
+            });
+            if (selectAll) {
+                selectedRows = mockData.map(d => d.id);
+            } else {
+                selectedRows = [];
+            }
+        }
+
+        // 搜索
+        function search() {
+            alert('执行搜索');
+        }
+
+        // 重置
+        function resetSearch() {
+            document.querySelectorAll('.search-input, .search-select').forEach(el => el.value = '');
+        }
+
+        // 导入
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+            document.getElementById('uploadText').textContent = '点击上传文件';
+            document.getElementById('importFile').value = '';
+        }
+
+        function downloadTemplate() {
+            alert('开始下载模板: 入库链接导入模板.xlsx');
+        }
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('uploadText').textContent = file.name;
+            }
+        }
+
+        function confirmImport() {
+            const file = document.getElementById('importFile').files[0];
+            if (!file) {
+                alert('请先选择文件');
+                return;
+            }
+            alert('导入成功');
+            closeImportModal();
+        }
+
+        // 导出
+        function exportExcel() {
+            alert('开始导出...');
+        }
+
+        // 批量分配
+        function batchDistribution() {
+            if (selectedRows.length === 0) {
+                alert('请至少选择一条数据');
+                return;
+            }
+            document.getElementById('allocationTitle').textContent = '批量分配';
+            document.getElementById('allocationChannelName').textContent = `已选择 ${selectedRows.length} 条`;
+            document.getElementById('allocationPlatform').textContent = '';
+            // 重置复选框
+            document.querySelectorAll('#allocationModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('allocationModal').classList.add('active');
+        }
+
+        // 单行分配
+        let currentAllocationId = null;
+        let currentAllocationPlatform = null;
+
+        function handleDistribution(id, platform) {
+            currentAllocationId = id;
+            currentAllocationPlatform = platform;
+            const row = mockData.find(d => d.id === id);
+            document.getElementById('allocationTitle').textContent = '作品分配';
+            document.getElementById('allocationChannelName').textContent = row.name;
+            document.getElementById('allocationPlatform').textContent = `(${platform})`;
+            // 重置复选框
+            document.querySelectorAll('#allocationModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('allocationModal').classList.add('active');
+        }
+
+        function closeAllocationModal() {
+            document.getElementById('allocationModal').classList.remove('active');
+            currentAllocationId = null;
+            currentAllocationPlatform = null;
+        }
+
+        function confirmAllocation() {
+            const packages = Array.from(document.querySelectorAll('#allocationModal input[name="package"]:checked')).map(cb => cb.value);
+            const teams = Array.from(document.querySelectorAll('#allocationModal input[name="team"]:checked')).map(cb => cb.value);
+            if (packages.length === 0) {
+                alert('请选择分配套餐');
+                return;
+            }
+            if (teams.length === 0) {
+                alert('请选择分配团队');
+                return;
+            }
+            alert('分配成功');
+            closeAllocationModal();
+        }
+
+        // 判断是否可以分配（只有YouTube/Facebook平台且合约已审核且非自运营）
+        function canDistribute(item) {
+            const isTargetPlatform = ['YouTube', 'Facebook'].includes(item.authorizePlatform);
+            const isApproved = item.contractStatus === '0';
+            const isNotSelfOperated = item.servicePage.some(s => s.servicePageName !== '自运营');
+            return isTargetPlatform && isApproved && isNotSelfOperated;
+        }
+
+        // 打开入库链接
+        function openStorageUrl(url) {
+            window.open(url, '_blank');
+        }
+
+        // 即将到期
+        function clickExpiring() {
+            document.getElementById('search_authorizeExpireType').value = '即将到期';
+            search();
+        }
+
+        // 设置弹窗
+        let currentSettingId = null;
+
+        function openSettingModal(id) {
+            currentSettingId = id;
+            const row = mockData.find(d => d.id === id);
+            document.getElementById('settingTitle').textContent = `设置${row.name ? `（${row.name}）` : ''}`;
+            document.getElementById('settingCategory').value = row.categoryStr?.split('/')[0] || '';
+            document.getElementById('settingStorageUrl').value = row.storageUrl || '';
+            document.getElementById('settingAlias').value = row.aliasList ? row.aliasList.join('、') : '';
+            document.getElementById('settingModal').classList.add('active');
+        }
+
+        function closeSettingModal() {
+            document.getElementById('settingModal').classList.remove('active');
+            currentSettingId = null;
+        }
+
+        function saveSetting() {
+            const category = document.getElementById('settingCategory').value;
+            if (!category) {
+                alert('请选择垂类');
+                return;
+            }
+            const row = mockData.find(d => d.id === currentSettingId);
+            if (row) {
+                row.categoryStr = document.getElementById('settingCategory').value;
+                row.aliasList = document.getElementById('settingAlias').value.split('、').filter(s => s.trim());
+                row.storageUrl = document.getElementById('settingStorageUrl').value;
+            }
+            alert('保存成功');
+            closeSettingModal();
+            renderTable();
+        }
+
+        // 编辑弹窗（详情页使用，与设置弹窗一致）
+        function openEditModal() {
+            if (!currentComposition) return;
+            openSettingModal(currentComposition.id);
+        }
+
+        function closeEditModal() {
+            closeSettingModal();
+        }
+
+        function saveEdit() {
+            saveSetting();
+        }
+
+        function togglePublishTimeType(type) {
+            document.getElementById('editFirstPublishTime').style.display = type === 'custom' ? 'block' : 'none';
+        }
+        
+        // 交接单抄屉
+        function openDeliveryDrawer(deliveryNo) {
+            document.getElementById('deliveryNo').textContent = deliveryNo || 'ZY2603240010';
+            document.getElementById('deliveryCreator').textContent = '刘崪洁';
+            document.getElementById('deliveryTime').textContent = '2026-03-24 11:38:18';
+
+            // 作品信息表格（对应截图5条数据）
+            const worksData = [
+                { name: '我爱的人，伤我最深', internalPublish: '可发布', firstTime: '-', channelLimit: '无限制', subtitleAllow: '全部', subtitleForbid: '-', dubAllow: '-', dubForbid: '-' },
+                { name: '姑婆下凡，带宗门飞升', internalPublish: '可发布', firstTime: '-', channelLimit: '无限制', subtitleAllow: '全部', subtitleForbid: '-', dubAllow: '-', dubForbid: '-' },
+                { name: '回到奶奶病重那天', internalPublish: '可发布', firstTime: '-', channelLimit: '无限制', subtitleAllow: '全部', subtitleForbid: '-', dubAllow: '-', dubForbid: '-' },
+                { name: '我才是继承人', internalPublish: '可发布', firstTime: '-', channelLimit: '无限制', subtitleAllow: '全部', subtitleForbid: '-', dubAllow: '-', dubForbid: '-' },
+                { name: '复仇从离婚开始', internalPublish: '可发布', firstTime: '-', channelLimit: '无限制', subtitleAllow: '全部', subtitleForbid: '-', dubAllow: '-', dubForbid: '-' },
+            ];
+            document.getElementById('deliveryWorksTable').innerHTML = worksData.map(w => `
+                <tr>
+                    <td><span style="color:#9155FD;cursor:pointer;">${w.name}</span></td>
+                    <td>${w.internalPublish}</td>
+                    <td>${w.firstTime}</td>
+                    <td>${w.channelLimit}</td>
+                    <td>${w.subtitleAllow}</td>
+                    <td>${w.subtitleForbid}</td>
+                    <td>${w.dubAllow}</td>
+                    <td>${w.dubForbid}</td>
+                </tr>
+            `).join('');
+
+            // 备注信息：默认显示空状态
+            document.getElementById('deliveryRemarkEmpty').style.display = 'flex';
+            document.getElementById('deliveryRemarkList').style.display = 'none';
+
+            document.getElementById('deliveryDrawer').classList.add('active');
+        }
+
+        function closeDeliveryDrawer() {
+            document.getElementById('deliveryDrawer').classList.remove('active');
+        }
+
+        // 时间线抽屉
+        function openTimelineDrawer(id) {
+            const row = mockData.find(d => d.id === id);
+            document.getElementById('timelineChannelName').textContent = row.name;
+            document.getElementById('timelineStatus').textContent = '已发布';
+            
+            const timelineData = [
+                { time: '2024-03-15 10:30:00', title: '创建通道' },
+                { time: '2024-03-15 14:20:00', title: '提交审核通道' },
+                { time: '2024-03-16 09:00:00', title: '审核通过通道' },
+                { time: '2024-03-17 10:00:00', title: '发布通道' }
+            ];
+            const html = timelineData.map((item, index) => `
+                <div class="timeline-item">
+                    <div class="timeline-dot" style="background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDE2IDE2Ij48Y2lyY2xlIGN4PSI4IiBjeT0iOCIgcj0iNiIgZmlsbD0iI2ZmNzg3NSIvPjwvc3ZnPg==') center/contain no-repeat;"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title" style="font-weight: 500;">${item.title}</div>
+                        <div class="timeline-time" style="color: #8c8c9a; font-size: 12px; margin-top: 2px;">${item.time}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('timelineContent').innerHTML = html;
+            document.getElementById('timelineDrawer').classList.add('active');
+        }
+
+        function closeTimelineDrawer() {
+            document.getElementById('timelineDrawer').classList.remove('active');
+        }
+
+        // 打开记录
+        function openRecord(name) {
+            alert(`查看作品: ${name}`);
+        }
+
+        // 当前作品
+        let currentComposition = null;
+
+        // 作品详情抽屉
+        function openDetailDrawer(id) {
+            currentComposition = mockData.find(d => d.id === id);
+            if (!currentComposition) return;
+            
+            document.getElementById('drawerTitle').textContent = currentComposition.name;
+            // 标签行：性别偏向 + 题材标签 + 集数 + 垂类
+            const genderMap2 = { female: { label: '女频', bg: '#fff0f6', color: '#eb2f96' }, male: { label: '男频', bg: '#e6f7ff', color: '#1890ff' }, general: { label: '通用', bg: '#f6ffed', color: '#52c41a' } };
+            const g2 = currentComposition.gender;
+            let tagsRowHtml = '';
+            if (g2 && genderMap2[g2]) {
+                tagsRowHtml += '<span style="padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;background:' + genderMap2[g2].bg + ';color:' + genderMap2[g2].color + ';">' + genderMap2[g2].label + '</span>';
+            }
+            (currentComposition.tags || []).forEach(t => {
+                tagsRowHtml += '<span style="padding:2px 10px;border-radius:12px;font-size:12px;background:#f5f0ff;color:#9155FD;">' + t + '</span>';
+            });
+            if (currentComposition.episodeCount) {
+                tagsRowHtml += '<span style="font-size:12px;color:#8c8c9a;margin-left:4px;">' + currentComposition.episodeCount + '集</span>';
+            }
+            if (currentComposition.categoryStr) {
+                tagsRowHtml += '<span style="font-size:12px;color:#8c8c9a;border-left:1px solid #e8e8e8;padding-left:10px;margin-left:4px;">' + currentComposition.categoryStr + '</span>';
+            }
+            document.getElementById('drawerTagsRow').innerHTML = tagsRowHtml;
+            // 简介展开收起
+            const desc = currentComposition.description || '';
+            const descTextEl = document.getElementById('drawerDescText');
+            const descToggleEl = document.getElementById('drawerDescToggle');
+            descTextEl.textContent = desc;
+            descTextEl._collapsed = true;
+            if (desc.length > 80) {
+                descToggleEl.style.display = 'inline';
+                descToggleEl.textContent = '展开';
+                descTextEl.style.webkitLineClamp = '3';
+            } else {
+                descToggleEl.style.display = 'none';
+                descTextEl.style.webkitLineClamp = 'unset';
+            }
+            
+            // 合约信息
+            document.getElementById('detailImportMode').textContent = currentComposition.sharePattern || '-';
+            document.getElementById('detailSigningEntity').textContent = currentComposition.signCompanyName || '-';
+            const contractLinkEl = document.getElementById('detailContractLink');
+            contractLinkEl.innerHTML = '<a href="#" onclick="alert(\'查看合约链接\')" style="color:#9155FD;text-decoration:none;">查看链接</a>';
+            
+            renderBasicInfo();
+            renderPlatformList();
+            renderPublishInfo();
+            renderLanguageInfo();
+            renderChangeTimeline();
+            
+            document.getElementById('detailDrawer').classList.add('active');
+        }
+
+        function toggleDesc() {
+                    const el = document.getElementById('drawerDescText');
+                    const btn = document.getElementById('drawerDescToggle');
+                    if (el._collapsed) {
+                        el.style.webkitLineClamp = 'unset';
+                        el.style.display = 'inline';
+                        btn.textContent = '收起';
+                        el._collapsed = false;
+                    } else {
+                        el.style.webkitLineClamp = '3';
+                        el.style.display = '-webkit-box';
+                        btn.textContent = '展开';
+                        el._collapsed = true;
+                    }
+                }
+        
+                function closeDetailDrawer() {
+            document.getElementById('detailDrawer').classList.remove('active');
+        }
+
+                function renderBasicInfo() {
+            const cpTypeMap = { 1: '个人', 2: '企业', 3: '境外个人', 4: '境外企业' };
+            document.getElementById('basicInfo').innerHTML =
+                '<div class="info-row-item"><span class="info-row-label">CP名称：</span><span class="info-row-value">' + currentComposition.copyrightHolder + '<span class="tag tag-primary" style="margin-left:8px;font-size:11px;padding:1px 8px;">' + (cpTypeMap[currentComposition.cpType] || '-') + '</span></span></div>' +
+                '<div class="info-row-item"><span class="info-row-label">垂类：</span><span class="info-row-value">' + (currentComposition.categoryStr || '-') + '</span></div>' +
+                '<div class="info-row-item"><span class="info-row-label">运营方案：</span><span class="info-row-value">' + (currentComposition.deliveryReceiptNum || '-') + '</span></div>' +
+                '<div class="info-row-item"><span class="info-row-label">入库链接：</span><span class="info-row-value link"><a href="' + (currentComposition.storageUrl || '#') + '" target="_blank" style="color:#9155FD;text-decoration:none;">查看链接</a></span></div>' +
+                '<div class="info-row-item" style="grid-column:span 2;"><span class="info-row-label">别名：</span><span class="info-row-value">' + (currentComposition.aliasList ? currentComposition.aliasList.join('、') : '-') + '</span></div>';
+        }
+
+        function renderPlatformList() {
+            const platforms = currentComposition.newSignChannelVos || [];
+            const platformMap = { 'YouTube': 'YouTube', 'Facebook': 'Facebook', 'TikTok': 'TikTok' };
+            
+            document.getElementById('platformList').innerHTML = platforms.map(p => {
+                const statusText = p.contractStatus === '0' ? '生效中' : p.contractStatus === '4' ? '已过期' : '已解约';
+                const statusClass = p.contractStatus === '0' ? 'tag-success' : p.contractStatus === '4' ? 'tag-warning' : 'tag-error';
+                return `
+                    <div class="platform-item">
+                        <div class="platform-header">
+                            <div class="platform-main">
+                                <span class="platform-name">${platformMap[p.authorizePlatform] || p.authorizePlatform}</span>
+                                <span class="platform-period">${p.authLimitStart} 至 ${p.authLimitEnd}</span>
+                            </div>
+                            <span class="tag ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="platform-meta">${(p.servicePage || []).map(s => `<span class="platform-package">${s.servicePageName}</span>`).join('')}</div>
+                    </div>
+                `;
+            }).join('') || '<div style="color:#8c8c9a;">暂无授权平台</div>';
+        }
+
+        function renderPublishInfo() {
+            document.getElementById('publishInfo').innerHTML = `
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:4px;">首发时间</div>
+                    <div style="font-size:15px;font-weight:600;color:#9155FD;">未设置</div>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:4px;">内部可发布</div>
+                    <div>否</div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#8c8c9a;margin-bottom:4px;">可发频道</div>
+                    <div>无限制</div>
+                </div>
+            `;
+        }
+
+        function renderLanguageInfo() {
+            const renderLangs = (codes, type) => {
+                if (!codes || codes.length === 0) return '<span style="color:#c0c4cc;font-size:13px;">未配置</span>';
+                return `<div style="display:flex;flex-wrap:wrap;gap:6px;">${codes.map(c => 
+                    `<span class="tag tag-${type}" style="font-size:11px;padding:2px 8px;">${c}</span>`
+                ).join('')}</div>`;
+            };
+            document.getElementById('subtitleInfo').innerHTML = `
+                <div style="margin-bottom:10px;"><div style="font-size:11px;color:#8c8c9a;margin-bottom:6px;">可发</div>${renderLangs(['中文', '英文'], 'success')}</div>
+                <div><div style="font-size:11px;color:#8c8c9a;margin-bottom:6px;">禁发</div>${renderLangs([], 'error')}</div>
+            `;
+            document.getElementById('dubbingInfo').innerHTML = `
+                <div style="margin-bottom:10px;"><div style="font-size:11px;color:#8c8c9a;margin-bottom:6px;">可发</div>${renderLangs(['中文'], 'success')}</div>
+                <div><div style="font-size:11px;color:#8c8c9a;margin-bottom:6px;">禁发</div>${renderLangs([], 'error')}</div>
+            `;
+        }
+
+        function renderChangeTimeline() {
+            const records = [
+                { changeTime: currentComposition.createdAt, changer: currentComposition.businessName || '系统', changeField: '作品', oldValue: '', newValue: '创建作品', changeType: '创建' }
+            ];
+            
+            document.getElementById('changeTimeline').innerHTML = records.map(r => {
+                const isCreate = r.changeType === '创建';
+                return `
+                <div style="padding:12px 0;border-bottom:1px solid #f0f0f2;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-weight:600;">${r.changer}</span>
+                            ${isCreate ? '<span style="background:#f6ffed;color:#52c41a;padding:1px 6px;border-radius:3px;font-size:11px;">【创建】</span>' : '<span style="background:#e6f7ff;color:#1890ff;padding:1px 6px;border-radius:3px;font-size:11px;">【修改】</span>'}
+                        </div>
+                        <span style="color:#8c8c9a;font-size:12px;">${r.changeTime}</span>
+                    </div>
+                    <div style="font-size:13px;">
+                        ${isCreate ? 
+                            `<span style="color:#52c41a;font-weight:500;">${r.newValue}</span>` :
+                            `<span style="color:#606068;">${r.changeField}：</span>
+                             <span style="color:#f5222d;text-decoration:line-through;">${r.oldValue || '空'}</span>
+                             <span style="margin:0 8px;">→</span>
+                             <span style="color:#52c41a;font-weight:500;">${r.newValue}</span>`
+                        }
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function switchDetailTab(tab) {
+            document.querySelectorAll('.detail-drawer .drawer-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.detail-drawer .tab-content').forEach(t => t.style.display = 'none');
+            document.querySelector(`.detail-drawer [data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).style.display = 'block';
+        }
+
+        // 编辑弹窗
+        function openEditModal() {
+            document.getElementById('editModal').classList.add('active');
+            document.getElementById('editCategory').value = currentComposition.categoryStr?.split('/')[0] || '短剧';
+            document.getElementById('editAlias').value = currentComposition.aliasList ? currentComposition.aliasList.join('、') : '';
+            document.getElementById('editStorageUrl').value = currentComposition.storageUrl || '';
+            
+            // 初始化频道选择
+            const channels = ['无限制', '仅限CP指定频道'];
+            document.getElementById('editChannels').innerHTML = channels.map(c => 
+                `<div class="channel-option" onclick="this.classList.toggle('selected')">${c}</div>`
+            ).join('');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        function togglePublishTimeType(type) {
+            document.getElementById('editFirstPublishTime').style.display = type === 'custom' ? 'block' : 'none';
+        }
+
+        function saveEdit() {
+            currentComposition.categoryStr = document.getElementById('editCategory').value;
+            currentComposition.aliasList = document.getElementById('editAlias').value.split('、').filter(s => s.trim());
+            currentComposition.storageUrl = document.getElementById('editStorageUrl').value;
+            
+            // 刷新显示
+            openDetailDrawer(currentComposition.id);
+            closeEditModal();
+            renderTable();
+            alert('保存成功');
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>

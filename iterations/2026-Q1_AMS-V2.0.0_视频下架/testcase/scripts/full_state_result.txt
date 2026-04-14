@@ -1,0 +1,44 @@
+COLUMNS: ['id', 'code', 'takedown_reason', 'takedown_description', 'process_method', 'deadline_date', 'status', 'retry_count', 'create_fail_reason', 'create_source', 'create_type', 'task_source', 'team_id', 'team_name', 'operation_team_id', 'terminate_id', 'auditor_id', 'audit_opinion', 'audit_time', 'created_user_id', 'created_at', 'updated_at']
+DEL_COL: None
+DESC: ['id', 'code', 'takedown_reason', 'takedown_description', 'process_method', 'deadline_date', 'status', 'retry_count', 'create_fail_reason', 'create_source', 'create_type', 'task_source', 'team_id', 'team_name', 'operation_team_id', 'terminate_id', 'auditor_id', 'audit_opinion', 'audit_time', 'created_user_id', 'created_at', 'updated_at']
+TASK COUNT: 12
+
+2038430617552576514 | COMPLETED | VIDEO_DELETE | DISTRIBUTOR_TERMINATION | dd=2026-03-31 | audit=2026-03-30 14:10:30
+2038520288966107138 | CREATE_FAILED | VIDEO_PRIVACY | DISTRIBUTOR_TERMINATION | dd=2026-04-04 | audit=None
+2038533201516912642 | PENDING_PROCESS | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-05 | audit=2026-04-01 10:00:00
+2038535555804913665 | PENDING_PROCESS | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-05 | audit=2026-04-01 08:00:00
+2038539016525144066 | COMPLETED | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-02 | audit=2026-03-30 17:42:26
+2038544032984031234 | PENDING_PROCESS | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-05 | audit=2026-04-01 12:00:00
+2038545459219357697 | COMPLETED | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-02 | audit=2026-03-30 17:41:10
+2038554013938573313 | PENDING_REVIEW | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-02 | audit=2026-04-01 09:57:27
+2038820630912131074 | COMPLETED | VIDEO_PRIVACY | OTHER | dd=2026-04-05 | audit=2026-03-31 12:49:20
+2038928991221538818 | COMPLETED | VIDEO_DELETE | TEMP_COPYRIGHT_DISPUTE | dd=2026-04-03 | audit=2026-03-31 19:42:55
+2038937322317242370 | CREATING | VIDEO_PRIVACY | DISTRIBUTOR_TERMINATION | dd=2026-04-05 | audit=None
+2039170925521399809 | PENDING_REVIEW | VIDEO_PRIVACY | SINGLE_TERMINATION | dd=2026-04-01 | audit=2026-04-01 11:56:39
+
+STATUS DISTRIBUTION:
+  COMPLETED / VIDEO_DELETE = 4
+  COMPLETED / VIDEO_PRIVACY = 1
+  CREATE_FAILED / VIDEO_PRIVACY = 1
+  CREATING / VIDEO_PRIVACY = 1
+  PENDING_PROCESS / VIDEO_DELETE = 3
+  PENDING_REVIEW / VIDEO_DELETE = 1
+  PENDING_REVIEW / VIDEO_PRIVACY = 1
+
+TC_COLUMNS: ['id', 'task_id', 'composition_id', 'composition_name', 'cp_name', 'register_channel_ids', 'expand_status', 'fail_reason', 'video_count', 'created_at', 'updated_at']
+
+COMPOSITION COUNTS:
+  id=2039170925521399809 status=PENDING_REVIEW compositions=2
+  id=2038430617552576514 status=COMPLETED compositions=1
+  id=2038520288966107138 status=CREATE_FAILED compositions=1
+  id=2038533201516912642 status=PENDING_PROCESS compositions=1
+  id=2038535555804913665 status=PENDING_PROCESS compositions=1
+  id=2038539016525144066 status=COMPLETED compositions=1
+  id=2038544032984031234 status=PENDING_PROCESS compositions=1
+  id=2038545459219357697 status=COMPLETED compositions=1
+  id=2038554013938573313 status=PENDING_REVIEW compositions=1
+  id=2038820630912131074 status=COMPLETED compositions=1
+  id=2038928991221538818 status=COMPLETED compositions=1
+  id=2038937322317242370 status=CREATING compositions=0
+
+TERMINATION COUNT: 35

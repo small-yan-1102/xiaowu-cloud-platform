@@ -1,0 +1,120 @@
+# ================================================
+# 云效同步工具 - 配置文件模板
+# ================================================
+# 复制此文件为 config.yaml 并填入实际值
+# 注意: config.yaml 包含敏感信息，请勿提交到版本库
+# 功能: 用例同步 / 测试结果回写 / 缺陷创建
+# ================================================
+
+# 云效 API 连接配置
+yunxiao:
+  # 个人访问令牌 PAT（也可通过环境变量 YUNXIAO_PAT 设置）
+  # 获取方式: 云效 -> 头像 -> 个人设置 -> 个人访问令牌 -> 新建
+  # 权限: 需勾选「测试管理」和「项目协作」相关读写权限
+  # 格式: pt-xxxx****xxxx
+  personal_access_token: ""
+
+  # 云效组织ID（也可通过环境变量 YUNXIAO_ORG_ID 设置）
+  # 获取方式: 云效控制台 -> 设置 -> 组织信息 -> 组织ID
+  organization_id: ""
+
+  # Testhub 用例库ID（testRepo id）
+  # 获取方式: 云效 -> 测试管理 -> 用例库 -> 用例库设置 -> 用例库ID
+  # 首次使用时留空，按提示在控制台创建后填入
+  space_identifier: ""
+
+  # 用例库显示名称（仅用于提示信息）
+  space_name: "剧权宝测试用例库"
+
+  # 用例默认负责人用户ID（也可通过环境变量 YUNXIAO_ASSIGNED_TO 设置）
+  # 获取方式: 云效 -> 设置 -> 成员管理 -> 点击用户查看 ID
+  assigned_to: ""
+
+  # API 域名（通常无需修改）
+  domain: "openapi-rdc.aliyuncs.com"
+
+# 同步行为配置
+sync:
+  # Markdown 用例目录（相对项目根目录的路径）
+  md_case_dir: ".claude/skills/测试用例库/剧权宝用例库/测试脚本_v2/md_case"
+
+  # 同步模块过滤（留空则同步全部模块）
+  # 可选值: login, intro, enterprise_cert, credits_center,
+  #         team_management, account_settings, dashboard_overview
+  modules: []
+
+  # 模拟模式（true = 仅解析和映射，不调用 API）
+  dry_run: false
+
+  # 每批次处理数量（防 API 限流）
+  batch_size: 10
+
+  # API 失败重试次数
+  retry_count: 3
+
+  # 重试间隔（秒，实际等待时间随次数递增）
+  retry_delay: 2
+
+# 映射与状态持久化配置
+mapping:
+  # 同步状态文件路径（相对项目根目录）
+  # 记录已同步的用例ID和目录映射，支持增量同步
+  state_file: ".claude/skills/yunxiao-sync/sync_state.json"
+
+# 云效 Projex 缺陷配置 - 旧单项目模式（向后兼容）
+# 当使用 projects 多项目配置时，此节仅作为回退
+projex:
+  project_id: ""
+  workitem_type_id: ""
+  default_assignee: ""
+  sprint_id: ""
+  severity_option_id: ""
+  priority_option_id: ""
+
+# ============================================================
+# 多项目 Projex 缺陷配置 (v2)
+# ============================================================
+# 按 case_id 前缀自动路由到对应项目
+# 使用 --init-projects 命令查询组织所有项目信息:
+#   python create_defect.py --init-projects
+#
+# 每个项目需配置:
+#   name: 显示名称
+#   prefix_patterns: case_id 前缀匹配规则（如 AMS- 匹配 AMS-VTD-002）
+#   project_id: Projex 项目ID
+#   workitem_type_id: 缺陷工作项类型ID
+#   severity_options: 严重程度名称→ID 映射
+#   priority_options: 优先级名称→ID 映射
+#   assignees: 前端/后端/默认负责人 user_id
+projects:
+  # 示例项目配置（复制此模板，修改实际值）
+  # PROJECT_KEY:                             # 项目标识（大写缩写）
+  #   name: "项目显示名称"
+  #   prefix_patterns: ["KEY-"]              # case_id 前缀匹配规则
+  #   project_id: ""                         # Projex 项目ID
+  #   workitem_type_id: ""                   # 缺陷类型ID
+  #   severity_options:                      # 严重程度选项 ID 映射
+  #     致命: ""
+  #     严重: ""
+  #     一般: ""
+  #     轻微: ""
+  #   default_severity: "一般"
+  #   priority_options:                      # 优先级选项 ID 映射
+  #     紧急: ""
+  #     高: ""
+  #     中: ""
+  #     低: ""
+  #   default_priority: "中"
+  #   assignees:
+  #     frontend: ""                         # 前端负责人 user_id
+  #     backend: ""                          # 后端负责人 user_id
+  #     default: ""                          # 默认负责人 user_id
+
+# 截图上传配置（create_defect.py 使用，可选）
+screenshots:
+  # 截图根目录（相对项目根目录，批量模式下按用例ID自动发现截图）
+  # 命名格式: {CP级别}_{用例编号}_{步骤}_{状态}_{时间戳}.png
+  dir: "test_reports/screenshots"
+
+  # 是否禁用截图上传（true = 仅在描述中以文本引用，不上传附件）
+  no_upload: false

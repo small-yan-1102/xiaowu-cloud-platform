@@ -1,0 +1,14 @@
+=== COMPLETED tasks with composition/detail counts ===
+  V2603300001 | compositions=1 | details=3
+  V2603300005 | compositions=1 | details=3
+  V2603300007 | compositions=1 | details=3
+  V2603310003 | compositions=1 | details=3
+  V2603310005 | compositions=1 | details=2
+
+Best candidate: V2603300001 with 1 compositions, 3 details
+
+Details for V2603300001:
+  video_id=_ivssajl8C0 | title=None | comp=D的气泡水 | status=COMPLETED
+  video_id=8osKZ-x8QXE | title=None | comp=D的气泡水 | status=COMPLETED
+  video_id=380Ns7AJ0O4 | title=優良男女-测试 (1)#美式文化传播# | comp=D的气泡水 | status=COMPLETED
+DONE

@@ -1,0 +1,10 @@
+  V2603300004: rows=1, deadline=2026-04-05, reason=TEMP_COPYRIGHT_DISPUTE, audit_time=2026-04-01 08:00:00
+  V2603300003: rows=1, deadline=2026-04-05, reason=TEMP_COPYRIGHT_DISPUTE, audit_time=2026-04-01 10:00:00
+  V2603300006: rows=1, deadline=2026-04-05, reason=TEMP_COPYRIGHT_DISPUTE, audit_time=2026-04-01 12:00:00
+Committed.
+
+AFTER UPDATE (ordered by audit_time):
+  V2603300004 reason=TEMP_COPYRIGHT_DISPUTE deadline=2026-04-05 audit_time=2026-04-01 08:00:00
+  V2603300003 reason=TEMP_COPYRIGHT_DISPUTE deadline=2026-04-05 audit_time=2026-04-01 10:00:00
+  V2603300006 reason=TEMP_COPYRIGHT_DISPUTE deadline=2026-04-05 audit_time=2026-04-01 12:00:00
+DONE
