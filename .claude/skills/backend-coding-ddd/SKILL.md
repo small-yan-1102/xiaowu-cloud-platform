@@ -62,6 +62,19 @@ Task Progress:
 
 3. 读取技术方案文档，理解业务需求和技术设计
 
+4. **规范版本兼容性检查**：
+   - 读取每个规范文件第一行的版本标识（如 `> 版本: v1.0`）
+   - 对比下表声明的兼容版本范围
+   - 版本不匹配 → **Warn**：提示"规范文件 {文件名} 版本 {actual} 与 Skill 兼容版本 {expected} 不一致，执行结果可能偏差"，继续执行
+   
+   | 规范文件 | 兼容版本 |
+   |---------|---------|
+   | CODING_STANDARDS.md | v1.x |
+   | ARCHITECTURE.md | v1.x |
+   | arch-conventions.md | v1.x |
+   | audit-checklist.md | v1.x |
+   | test-standards.md | v1.x |
+
 > ⛔ **DO NOT** 开始任何分析或代码生成，直到获取并读取迭代技术方案。
 
 **本阶段输出**：已读取的技术方案内容

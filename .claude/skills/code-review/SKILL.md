@@ -75,6 +75,8 @@ Task Progress:
 
 ### Phase 3: 输出审查报告
 
+> **修复建议**：对 Critical/Major 级别问题，报告中应附「建议修复方向」（如"建议使用参数化查询替代字符串拼接"），而非仅描述问题。
+
 基于 `assets/review-report-template.md` 模板生成审查报告,包含:
 
 1. **审查概览**: 各维度问题统计

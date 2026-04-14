@@ -162,6 +162,8 @@ Task Progress:
 
 ### Phase 4: 生成覆盖度报告（Generator 模式）
 
+> **补充用例建议**：审核发现的每条覆盖缺失项，应附「建议补充用例标题」和优先级，可直接作为 test-case-design Mode E 的输入。
+
 基于 `assets/coverage-report-template.md` 模板生成覆盖度报告，包含：
 
 1. **覆盖度概览**：各维度覆盖度统计

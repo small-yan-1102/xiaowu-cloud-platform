@@ -153,6 +153,8 @@ Task Progress:
 ⚠️ 建议：{视觉定位本质上脆弱，建议开发补充 aria-label 或 data-testid，后续迭代改用语义定位}
 ```
 
+> **语义标注建议**：每次成功定位后，在执行报告中自动生成一条 action item：「建议为 [{元素描述}] 补充 `aria-label="{建议值}"` 或 `data-testid="{建议值}"`」，推动从源头解决定位问题，减少对视觉兜底的依赖。
+
 **截图命名**：`VLF_{用例编号}_{步骤标识}_{结果}_{时间戳}.png`（VLF = Visual Location Fallback）
 
 ---

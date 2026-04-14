@@ -237,7 +237,8 @@ def generate_statistics(results: dict) -> dict:
     skipped = sum(1 for r in results.values() if r['status'] == '跳过')
     blocked = sum(1 for r in results.values() if r['status'] == '阻塞')
     manual = sum(1 for r in results.values() if r['status'] == '人工执行')
-    ai_executed = total - manual  # 人工执行用例不计入 AI 通过率分母
+    ai_executed = total - manual - skipped  # 人工执行和跳过用例均不计入 AI 通过率分母
+    # SKIP 处理规则：跳过用例不计入通过率分母，在统计报告中单独列出跳过原因分布
     
     return {
         'total': total,

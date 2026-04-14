@@ -55,6 +55,18 @@ triggers:
 
 ---
 
+## Phase 0: 规范文件加载
+
+**步骤**：
+1. 根据路由判定的 Mode，加载对应规范文件：
+   - Mode A → `references/function-inventory.md`
+   - Mode B → `references/granularity-evaluation.md`
+   - Mode C → `references/requirement-analysis.md`
+   - Mode D → `references/change-impact-analysis.md`
+2. 文件缺失 → **Warn**：使用 SKILL.md 中各 Mode 章节的内嵌核心流程继续执行（输出深度可能降低），提示用户补充规范文件
+
+---
+
 ## 输入/输出契约
 
 ### 输入契约
@@ -82,7 +94,7 @@ triggers:
 
 ## Mode A: 代码逆向梳理（function-inventory）
 
-> 详细规范见：`function-inventory.md`
+> 详细规范见：`references/function-inventory.md`（Phase 0 自动加载）
 
 ### 核心流程
 
@@ -118,7 +130,7 @@ Step 3  整合输出（双文件规则）
 
 ## Mode B: 颗粒度评估（granularity-evaluation）
 
-> 详细规范见：`granularity-evaluation.md`
+> 详细规范见：`references/granularity-evaluation.md`（Phase 0 自动加载）
 
 ### 核心流程
 
@@ -143,7 +155,7 @@ Step 4  输出评估结论
 
 ## Mode C: 需求分析（requirement-analysis）
 
-> 详细规范见：`requirement-analysis.md`
+> 详细规范见：`references/requirement-analysis.md`（Phase 0 自动加载）
 
 ### 核心流程
 
@@ -176,7 +188,7 @@ Step 5  输出结构化需求分析文档
 
 ## Mode D: 变更影响分析（change-impact-analysis）
 
-> 详细规范见：`change-impact-analysis.md`
+> 详细规范见：`references/change-impact-analysis.md`（Phase 0 自动加载）
 
 ### 适用场景
 
@@ -251,7 +263,7 @@ Mode A 产出的知识文档遵循 `function-inventory.md` §2.7 定义的消费
 
 | 文件 | 职责 |
 |------|------|
-| `function-inventory.md` | Mode A 代码逆向梳理：代码读取优先级、逐文件解析规则、菜单还原策略、输出格式、消费侧契约、变更追踪规则 |
-| `granularity-evaluation.md` | Mode B 颗粒度评估：六层颗粒度定义、评级标准、结论模板 |
-| `requirement-analysis.md` | Mode C 需求分析：四项识别、D1-D9 维度、可选维度、自查清单、Q 编号规范 |
-| `change-impact-analysis.md` | Mode D 变更影响分析：功能点分类（全新/改造/沿用）、逐维度对比、影响半径分析、输出模板 |
+| `references/function-inventory.md` | Mode A 代码逆向梳理：代码读取优先级、逐文件解析规则、菜单还原策略、输出格式、消费侧契约、变更追踪规则 |
+| `references/granularity-evaluation.md` | Mode B 颗粒度评估：六层颗粒度定义、评级标准、结论模板 |
+| `references/requirement-analysis.md` | Mode C 需求分析：四项识别、D1-D9 维度、可选维度、自查清单、Q 编号规范 |
+| `references/change-impact-analysis.md` | Mode D 变更影响分析：功能点分类（全新/改造/沿用）、逐维度对比、影响半径分析、输出模板 |

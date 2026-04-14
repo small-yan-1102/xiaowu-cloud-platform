@@ -265,6 +265,8 @@ Task Progress:
    - 审核结论（🟢/🟡/🔴）
    - 提示：问题修正后可触发 `test-case-design` 或 `api-test-case-design` 补充用例，再合并至主用例集
 
+> **补充用例建议**：每条覆盖缺失项应附「建议补充用例标题 + 优先级」，可直接作为 test-case-design Mode E 的输入。
+
 ---
 
 ## 验收标准

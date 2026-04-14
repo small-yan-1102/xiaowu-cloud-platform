@@ -1697,6 +1697,32 @@ if (FinanceConstant.UNATTRIBUTED_PIPELINE_ID.equals(report.getPipelineId())) {  
 
 导出有 60 秒防重复锁（Redis `setIfAbsent`），同一用户 60 秒内只能触发一次。
 
+### 6.7.1 无归属视频与逾期结算处理的衔接
+
+> 冲销报表中的无归属视频数据（`sign_channel_id = -1`，`pipeline_id = "unattributed"`）是逾期结算处理模块（SET-03 导入误差处理）的**直接数据来源**。
+
+**下游流向**：
+
+```
+yt_reversal_report（冲销报表，无归属行）
+    │ sign_channel_id = -1
+    │ 已包含：source_channel_revenue_ratio, us_revenue_ratio, sg_revenue_ratio
+    │
+    ▼ 运营导出无归属视频 Excel（§6.7）
+    ▼ 运营在逾期结算处理页面导入视频ID
+    │
+    ▼ SET-03 导入时，系统按视频ID匹配冲销报表中的无归属行
+    ▼ 直接读取已有的占比字段（非实时计算），执行 R1~R5 校验：
+    │  R1: 占比完整性校验（导入视频占比和 ≟ 冲销表无归属占比和）
+    │  R2~R5: 零值清理 → 误差抹平 → 安全阈值 → 极端情况
+    │
+    ▼ 校验通过 → 生成【未登记】收益记录 → 等待分销商登记
+```
+
+**关键数据关系**：无归属行的 `source_channel_revenue_ratio` 在本章 §2.9 计算写入 `yt_month_channel_revenue`，再由 §3/§4 冲销报表生成时带入 `yt_reversal_report`。逾期结算处理导入时直接使用冲销报表中的这个字段值，不再反向查询 `yt_month_channel_revenue`。
+
+> 详细的导入校验逻辑见 `逾期结算处理业务逻辑.md` §5.3 SET-03。
+
 ### 6.8 无需生成结算单的触发条件汇总
 
 

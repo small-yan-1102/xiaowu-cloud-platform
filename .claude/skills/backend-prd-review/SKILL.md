@@ -72,8 +72,8 @@ dependencies: []
 
 | 输入项 | 路径 | 缺失时处理策略 |
 |-------|------|-------------|
-| 审阅报告模板 | `.qoder/skills/backend-prd-review/assets/backend-prd-review-template.md` | Fatal：阻断执行，提示模板文件缺失 |
-| 后端审阅规范 | `.qoder/skills/backend-prd-review/references/backend-review-standard.md` | Fatal：阻断执行，提示规范文件缺失 |
+| 审阅报告模板 | `.qoder/skills/backend-prd-review/assets/backend-prd-review-template.md` | 降级: Warn + 使用内嵌最小模板（见附录 X） |
+| 后端审阅规范 | `.qoder/skills/backend-prd-review/references/backend-review-standard.md` | 降级: Warn + 使用内嵌最小模板（见附录 X） |
 
 **必需业务输入**（执行审阅所必需的外部资料）：
 
@@ -662,6 +662,8 @@ Task Progress:
 
 ### 审阅维度覆盖
 - [ ] 每个功能都从 8 个核心维度（DM/API/PF/SC/BL/AM/CP/NF）进行了审查
+
+> **维度优先级**：核心必审（DM/API/BL/SC）→ 按文档类型选审（PF/AM/CP/NF）。首次使用可仅执行核心 4 维度。
 - [ ] BL 维度：涉及状态流转的实体已检查四要素完整性（触发条件/输入/输出/目标状态）
 - [ ] BL 维度：关键业务规则已检查结构化描述（触发条件/输入数据源/处理逻辑/输出结果）
 - [ ] AM 维度：已检查术语一致性（PRD 术语 vs 开发术语）
@@ -791,3 +793,50 @@ PRD 说"做什么" → 追问"数据从哪来、存到哪去"
 |------|------|------|
 | 审阅报告模板 | `assets/backend-prd-review-template.md` | 审阅报告的输出结构模板，定义了 10 个章节的标准格式 |
 | 后端审阅规范 | `references/backend-review-standard.md` | 后端审阅的标准化参照基准，定义了 8 个审阅维度、检查清单、严重度分级和反模式列表 |
+
+---
+
+## 附录 X：内嵌最小模板（降级兜底）
+
+> 当 `assets/backend-prd-review-template.md` 或 `references/backend-review-standard.md` 缺失时使用。
+
+### X.1 审阅报告最小模板
+
+```
+# 后端 PRD 审阅报告
+
+**PRD 版本**: {版本号}
+**审阅日期**: {日期}
+
+## 一、需求理解总结
+（3-5 句话概括核心需求）
+
+## 二、审阅发现
+### 阻塞项（B）
+| # | 维度 | 问题 | 建议 |
+|---|------|------|------|
+
+### 补充项（S）
+| # | 维度 | 缺失内容 |
+|---|------|---------|
+
+### 疑问项（Q）
+| # | 问题 | 影响 |
+|---|------|------|
+
+## 三、整体评估
+**结论**: 通过 / 有条件通过 / 不通过
+```
+
+### X.2 审阅规范核心规则（8 条）
+
+> **维度优先级**：核心必审（DM/API/BL/SC）→ 按文档类型选审（PF/AM/CP/NF）。首次使用可仅执行核心 4 维度。
+
+1. 数据模型(DM): 每个实体的主键、外键、索引策略是否明确
+2. 接口设计(API): RESTful 规范、入参出参、错误码是否完整
+3. 性能(PF): 大数据量查询是否有分页、索引、缓存方案
+4. 安全(SC): 权限校验、数据隔离、敏感数据脱敏是否考虑
+5. 业务逻辑(BL): 状态机流转、业务规则、计算公式是否与 PRD 一致
+6. 审计(AM): 关键操作是否有日志记录
+7. 兼容性(CP): 新旧版本兼容、数据迁移方案是否明确
+8. 非功能(NF): 可用性、可扩展性、监控告警是否考虑
