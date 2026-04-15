@@ -1,8 +1,10 @@
 ---
 description: 审阅技术文档，执行需求一致性、风险场景识别和AI可测试性检查，输出结构化审阅报告
 ---
-请读取并严格执行 `.claude/skills/tech-doc-review/SKILL.md` 中定义的完整工作流。
+## 加载顺序
 
-> 审阅开发技术文档，执行需求一致性、风险场景识别和AI可测试性检查，输出结构化审阅报告。适用于提测前技术文档审阅场景。
+1. **Base**：读取 `linscode/skills/iteration/testing/tech-doc-review/SKILL.md` 作为主工作流
+2. **Override**：读取 `.claude/skills/tech-doc-review/OVERRIDES.md`，将其中的「覆盖」和「新增」条目应用到 Base 工作流对应位置
+3. **执行**：按合并后的完整工作流执行
 
-技能所需的支撑文件（模板、检查清单等）位于 `.claude/skills/tech-doc-review/` 目录下，以该目录为基准解析相对路径。
+> 支撑文件优先使用 `.claude/skills/tech-doc-review/` 下的本地版本，不存在时回退到 `linscode/skills/iteration/testing/tech-doc-review/` 下的 Base 版本。

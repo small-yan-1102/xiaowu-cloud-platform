@@ -1699,27 +1699,36 @@ if (FinanceConstant.UNATTRIBUTED_PIPELINE_ID.equals(report.getPipelineId())) {  
 
 ### 6.7.1 无归属视频与逾期结算处理的衔接
 
-> 冲销报表中的无归属视频数据（`sign_channel_id = -1`，`pipeline_id = "unattributed"`）是逾期结算处理模块（SET-03 导入误差处理）的**直接数据来源**。
+> 无归属视频数据是逾期结算处理模块（SET-03 导入误差处理）的上游数据来源。但需注意：无归属视频在本表和冲销报表中被**合并为一条**（`source_channel_revenue_ratio = null`），不存在逐视频占比。
 
 **下游流向**：
 
 ```
-yt_reversal_report（冲销报表，无归属行）
-    │ sign_channel_id = -1
-    │ 已包含：source_channel_revenue_ratio, us_revenue_ratio, sg_revenue_ratio
+§6.7 运营导出无归属视频 Excel（含逐条视频ID）
     │
-    ▼ 运营导出无归属视频 Excel（§6.7）
     ▼ 运营在逾期结算处理页面导入视频ID
     │
-    ▼ SET-03 导入时，系统按视频ID匹配冲销报表中的无归属行
-    ▼ 直接读取已有的占比字段（非实时计算），执行 R1~R5 校验：
-    │  R1: 占比完整性校验（导入视频占比和 ≟ 冲销表无归属占比和）
+    ▼ SET-03 导入时，系统回溯本章的上游数据源：
+    │
+    │  ① yt_month_channel_revenue_source（§2.3 视频级收益明细）
+    │     → 按视频ID查出每个视频的月度收益（分子）
+    │
+    │  ② yt_month_channel_revenue（§2.4 频道月度汇总）
+    │     → 取该频道+cms的总收益（分母）
+    │
+    │  ③ 实时计算每个视频的收益占比 = 视频收益 / 频道总收益
+    │
+    ▼ 用计算出的逐视频占比执行 R1~R5 校验：
+    │  R1: 占比完整性（导入视频占比和 ≟ 冲销表无归属占比总和）
     │  R2~R5: 零值清理 → 误差抹平 → 安全阈值 → 极端情况
     │
     ▼ 校验通过 → 生成【未登记】收益记录 → 等待分销商登记
 ```
 
-**关键数据关系**：无归属行的 `source_channel_revenue_ratio` 在本章 §2.9 计算写入 `yt_month_channel_revenue`，再由 §3/§4 冲销报表生成时带入 `yt_reversal_report`。逾期结算处理导入时直接使用冲销报表中的这个字段值，不再反向查询 `yt_month_channel_revenue`。
+**关键数据关系**：
+- **逐视频占比**：导入时从 `yt_month_channel_revenue_source`（§2.3）回溯计算，按视频维度得到收益占比
+- **校验基准**：R1 的比对基准来自冲销报表的无归属合并行（§6.4，`sign_channel_id = -1`），提供该维度的无归属总金额/总占比
+- **为什么不能直接读冲销报表**：无归属行在 `yt_month_channel_revenue`（§6.3.4）中被合并为一条且 `source_channel_revenue_ratio = null`，冲销报表继承了这一特征，不含逐视频占比
 
 > 详细的导入校验逻辑见 `逾期结算处理业务逻辑.md` §5.3 SET-03。
 

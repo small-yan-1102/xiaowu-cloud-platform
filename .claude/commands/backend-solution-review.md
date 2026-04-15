@@ -1,8 +1,10 @@
 ---
 description: 前端视角审阅后端方案，检查接口设计合理性、消费友好性和性能影响
 ---
-请读取并严格执行 `.claude/skills/backend-solution-review/SKILL.md` 中定义的完整工作流。
+## 加载顺序
 
-> 前端从联调与接口消费视角审阅后端方案,检查接口设计合理性、前端消费友好性、性能与体验影响。当用户说"审阅后端方案"、"前端审阅接口"、"backend-solution-review"时使用。
+1. **Base**：读取 `linscode/skills/iteration/frontend-coding/requirements/backend-solution-review/SKILL.md` 作为主工作流
+2. **Override**：读取 `.claude/skills/backend-solution-review/OVERRIDES.md`，将其中的「覆盖」和「新增」条目应用到 Base 工作流对应位置
+3. **执行**：按合并后的完整工作流执行
 
-技能所需的支撑文件（模板、检查清单等）位于 `.claude/skills/backend-solution-review/` 目录下，以该目录为基准解析相对路径。
+> 支撑文件优先使用 `.claude/skills/backend-solution-review/` 下的本地版本，不存在时回退到 `linscode/skills/iteration/frontend-coding/requirements/backend-solution-review/` 下的 Base 版本。

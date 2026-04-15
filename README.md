@@ -59,6 +59,10 @@
 - `systems/_shared/系统关系图.md`：系统间调用关系
 - `.claude/rules/test-environment-config.md`：测试环境地址和账号（密码见 `.claude/secrets/credentials.md`）
 
+### Harness 工程化文档
+
+设计文档维护在 `linscode/` 目录（独立 Git 仓库）：`harness-engineering-complete.md`、`iteration-orchestrator-design.md` 等。
+
 ---
 
 > 详细使用说明见 [目录结构说明.md](./目录结构说明.md)

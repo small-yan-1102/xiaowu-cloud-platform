@@ -1,8 +1,6 @@
 ---
 description: 根据测试/产品/后端三路审阅反馈意见原地更新前端用户故事文档
 ---
-请读取并严格执行 `.claude/skills/user-story-update/SKILL.md` 中定义的完整工作流。
+请读取并严格执行 `linscode/skills/iteration/frontend-coding/requirements/user-story-update/SKILL.md` 中定义的完整工作流。
 
-> 根据测试/产品/后端三路审阅反馈意见,原地更新前端用户故事文档。当用户说"修改用户故事"、"根据审阅意见修改"、"同步审阅反馈"时使用。
-
-技能所需的支撑文件（模板、检查清单等）位于 `.claude/skills/user-story-update/` 目录下，以该目录为基准解析相对路径。
+技能所需的支撑文件（模板、检查清单等）位于 `linscode/skills/iteration/frontend-coding/requirements/user-story-update/` 目录下，以该目录为基准解析相对路径。
