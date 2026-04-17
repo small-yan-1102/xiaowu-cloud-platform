@@ -13,6 +13,7 @@
 - [4. YT冲销报表生成逻辑](#4-yt冲销报表生成逻辑)（4.1触发方式 / 4.2前置校验 / 4.3原始数据获取 / 4.4频道类型分类 / 4.5子集收益拆分 / 4.6合约信息匹配 / 4.7不结算名单匹配 / 4.8CID处理 / 4.9数据存储 / 4.10拆分子集 / 4.11批量拆分子集 / 4.12批量删除子集 / 4.13字段汇总）
 - [5. YT结算单生成逻辑](#5-yt结算单生成逻辑)（5.1触发方式 / 5.2前置校验 / 5.3聚合SQL / 5.4子集父行预取 / 5.5收益计算 / 5.6编号规则 / 5.7客服填充 / 5.8事务存储 / 5.9结算单类型 / 5.10异常处理 / 5.11字段汇总）
 - [6. 无归属视频的逻辑](#6-无归属视频的逻辑)（6.1概念 / 6.2快照维护 / 6.3归因全流程 / 6.4字段表现 / 6.5冲销报表处理 / 6.6重新生成跳过 / 6.7无归属导出 / 6.8无需生成汇总）
+- [7. 冲销表可用数据查询链路](#7-冲销表可用数据查询链路)（7.1状态字段枚举 / 7.2页面列表查询链路 / 7.3结算单生成数据筛选 / 7.4两场景对比 / 7.5数据生命周期）
 
 ---
 
@@ -1753,5 +1754,228 @@ graph TB
 
 ---
 
+## 7. 冲销表可用数据查询链路 {#冲销表查询链路}
+
+> 核心服务：`YtReversalReportServiceImpl.handleQuery()`
+> 对应表：`yt_reversal_report`
+> 本节梳理冲销表在**页面列表查询**和**结算单生成**两个场景下的数据筛选链路，以及各状态字段的过滤逻辑。
+
+### 7.1 状态字段枚举总览
+
+来源：`ConstantPool.java:25-110`
+
+冲销表通过 **3 个独立状态字段** 控制数据在各场景下的可见性和可操作性：
+
+| 状态字段 | 枚举值 | 含义 | 来源 |
+|---------|--------|------|------|
+| **received_status**（到账状态） | `0` = UNRECEIVED | 未到账 | ConstantPool.ReceivedStatus |
+| | `1` = RECEIVED | 已到账 | |
+| **channel_split_status**（频道拆分状态） | `0` = UNSPLIT | 未拆分 | ConstantPool.ChannelSplitStatus |
+| | `1` = SPLIT | 已拆分（合集/单开转型的父行） | |
+| **settlement_created_status**（结算单生成状态） | `0` = UNCREATED | 未生成结算单 | ConstantPool.SettlementCreatedStatus |
+| | `1` = CREATED | 已生成结算单 | |
+| | `2` = NONEEDCREATE | 无需生成结算单 | |
+
+### 7.2 页面列表查询链路
+
+来源：`CalculateReportController.reversal()` → `YtReversalReportServiceImpl.selectPage()` → `handleQuery()`
+
+#### 7.2.1 查询入口
+
+| 项目 | 值 |
+|------|-----|
+| 接口 | `GET /calculateReport/reversal` |
+| 请求参数 | `CalculateReportQuery`（见 §7.2.2） |
+| 返回 | 分页数据 `IPage<YtReversalReport>` → 转 `YtReversalDTO`（追加频道组别、操作人、是否转型等） |
+
+#### 7.2.2 搜索/筛选参数
+
+来源：`CalculateReportQuery.java`
+
+| 参数 | 类型 | 说明 | SQL 匹配方式 |
+|------|------|------|-------------|
+| `type` | String | `"unreceived"` 切换未到账列表模式 | 路径分叉（见 §7.2.3） |
+| `monthStart` | String | 到账月份起（yyyy-MM） | `receipted_at >= :monthStart-01` |
+| `monthEnd` | String | 到账月份止（yyyy-MM） | `receipted_at <= :monthEnd 月末日` |
+| `month` | String | 结算月份（yyyy-MM） | `month = :month`（精确） |
+| `channelId` | String | 频道ID | `channel_id = :channelId`（精确） |
+| `title` | String | 频道名称 | `channel_name LIKE %:title%`（模糊） |
+| `cms` | String | 收款系统 | `cms = :cms`（精确） |
+| `channelType` | String | 频道类型（逗号分隔） | `channel_type IN (:list)`（多值） |
+| `subsetName` | String | 子集名称 | `subset_name LIKE %:subsetName%` + 强制 `channel_type = SUBSET` |
+| `settlementCreatedStatus` | Integer | 结算单生成状态 | `settlement_created_status LIKE :status` |
+| `sharePattern` | String | 分成模式 | `= :sharePattern`；`"其他"` → `IS NULL` |
+| `hasContract` | Integer | 是否有合约（1/0） | `1` → `contract_id IS NOT NULL`；`0` → `contract_id IS NULL` |
+| `operationType` | String | 运营类型 | `operation_type = :operationType`（精确） |
+
+#### 7.2.3 核心路径分叉：已到账 vs 未到账
+
+来源：`handleQuery()` L111-129
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  type = "unreceived"（未到账列表）                             │
+│                                                               │
+│  WHERE received_status = 0                                    │
+│  ORDER BY mark_unreceived_at DESC                             │
+│  （不按 receipted_at 筛选，不按 created_at 排序）               │
+│                                                               │
+│  → 展示所有 received_status=0 的记录                           │
+│  → 不受 monthStart/monthEnd 过滤                              │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  type 为空 或 非 "unreceived"（默认已到账列表）                  │
+│                                                               │
+│  WHERE received_status = 1                                    │
+│  AND receipted_at >= :monthStart-01（可选）                     │
+│  AND receipted_at <= :monthEnd 月末日（可选）                   │
+│  ORDER BY created_at DESC, id ASC                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 7.2.4 全局隐藏规则
+
+来源：`handleQuery()` L131
+
+```sql
+-- 子集(channel_type=1)且 cms_revenue=0 的行不显示
+-- 非子集行或 cms_revenue > 0 的子集行正常显示
+WHERE (channel_type IS NULL OR channel_type != 1 OR (channel_type = 1 AND cms_revenue > 0))
+```
+
+> **临时方案**（代码注释 L130：`250527 临时方案 cms导出收益为0不显示 调差后大于0时显示`）：子集行 CMS 收益为 0 时隐藏，调差后 > 0 时重新显示。
+
+#### 7.2.5 Controller 层后处理
+
+来源：`CalculateReportController.reversal()` L104-125
+
+查询返回后，Controller 对每条记录追加以下信息：
+
+| 追加字段 | 数据来源 | 说明 |
+|---------|---------|------|
+| `hasContract` | `contractId != null ? "是" : "否"` | 前端展示是否有合约 |
+| `subsetName` | 仅 `channelType=SUBSET` 时保留 | 非子集行的 subsetName 置 null |
+| `updatedUser` | `UserCenterUtil.getNameByUserIds()` | 操作人 ID 转姓名 |
+| `isTransform` | `DateHandleUtil.checkIsTransform()` | 判断是否已转型（转型月 ≥ 当前 Period） |
+| 频道组别（二/三/四级部门） | `channelDeptInfoService.deptInfoMapByChannelAndPeriod()` | 按 channelId + month + 平台查询 |
+
+### 7.3 结算单生成时的数据筛选链路
+
+来源：`GenerateSettlementService.generateYtSettle()` → `YtReversalReportMapper.xml`
+
+#### 7.3.1 全量生成模式（不传 ids）
+
+来源：`fetch2GenerateSettleRecord` Mapper XML L267-295
+
+**WHERE 条件（4 项 AND）**：
+
+| 条件 | SQL 表达式 | 业务含义 |
+|------|-----------|---------|
+| ① 有合约 | `contract_id IS NOT NULL` | 无归属行（`contract_id=NULL`）天然排除 |
+| ② 非已拆父行 | `channel_split_status = 0` | 排除合集/单开转型的父行（父行仅做汇总，不生成结算单） |
+| ③ 已到账 | `received_status != 0` | 未到账数据不允许生成结算单 |
+| ④ 未生成结算单 | `settlement_created_status = 0` | 已生成（=1）和无需生成（=2）均排除 |
+| ⑤ 到账区间 | `receipted_at BETWEEN :start AND :end` | 按到账月份限定范围 |
+
+**GROUP BY（5 字段聚合）**：
+
+```sql
+GROUP BY channel_id, sign_channel_id, service_charge, proportion, federal_tax
+```
+
+> 同一 `channel_id + sign_channel_id + 分成比 + 手续费 + 联邦税率` 下跨月到账的多条记录会**合并为一条结算单**。
+
+**SELECT 聚合字段**：
+
+| 聚合字段 | 表达式 | 说明 |
+|---------|--------|------|
+| `idListStr` | `GROUP_CONCAT(id)` | 参与合并的所有冲销报表行 ID |
+| `monthListStr` | `GROUP_CONCAT(DISTINCT month)` | 合并的 Payout Period 列表 |
+| `servicePageNameListStr` | `GROUP_CONCAT(DISTINCT service_page_name)` | 套餐名称列表 |
+| `cms_revenue` | `SUM(cms_revenue)` | CMS 收益合计 |
+| `cms_revenue_us` | `SUM(cms_revenue_us)` | 美国收益合计 |
+| `cms_revenue_adjust` | `SUM(cms_revenue_adjust)` | CMS 收益调差合计 |
+| `cms_revenue_us_adjust` | `SUM(cms_revenue_us_adjust)` | 美国收益调差合计 |
+| `distributable_income` | `SUM(distributable_income)` | 可分配收益合计 |
+| `federal_tax_dollar` | `SUM(ROUND((cms_revenue_us + adjust) × federal_tax/100, 2))` | 联邦税额合计（逐行计算后求和） |
+
+#### 7.3.2 按 ID 生成模式（传入 ids）
+
+来源：`fetch2GenerateSettlementRecordsWithId` Mapper XML L297-335
+
+与全量模式的**关键差异**：先用传入的 `ids` 从冲销表中提取 `(channel_id, sign_channel_id, service_charge, proportion, federal_tax)` 组合作为**分组种子**，再 JOIN 回全表拉取该组合下**所有**满足条件的行。
+
+```
+传入 ids → 提取 5 字段分组种子（DISTINCT）
+    │
+    ↓ JOIN
+yt_reversal_report t1（全表）
+    │ WHERE 同全量模式 4 项条件 + 到账区间
+    ↓
+GROUP BY 同全量模式 5 字段
+```
+
+> **效果**：指定某条记录生成结算单时，同组下其他满足条件的行也会被一起合并，实现「同组跨月合并」。
+
+#### 7.3.3 生成后回写
+
+来源：`handleSettlementAndReport()` L193-213
+
+| 回写场景 | 目标字段 | 新值 | SQL |
+|---------|---------|------|-----|
+| 正常生成 | `settlement_no` + `settlement_created_status` | 编号 + `1`（已生成） | `updateSettlementInfo` |
+| 实发 ≤ 1 元 | `settlement_no_created_reason` + `settlement_created_status` | 原因文案 + `2`（无需生成） | `updateNoSettlementReasonById` |
+
+### 7.4 两场景查询条件对比
+
+| 维度 | 页面列表查询（已到账） | 页面列表查询（未到账） | 结算单生成 |
+|------|---------------------|---------------------|-----------|
+| **received_status** | `= 1` | `= 0` | `!= 0`（即 = 1） |
+| **channel_split_status** | 不过滤 | 不过滤 | `= 0`（排除已拆父行） |
+| **settlement_created_status** | 可选筛选 | 可选筛选 | `= 0`（仅未生成） |
+| **contract_id** | 可选筛选 | 可选筛选 | `IS NOT NULL`（必须有合约） |
+| **receipted_at** | 可选范围 | 不使用 | 必须指定范围 |
+| **channel_type=1 且 cms_revenue=0** | 隐藏 | 隐藏 | 因 `distributable_income=0` 无实际金额，但不显式排除 |
+| **排序** | `created_at DESC, id ASC` | `mark_unreceived_at DESC` | 无排序（聚合输出） |
+| **分页** | 有 | 有 | 无（全量聚合） |
+
+### 7.5 数据生命周期与状态流转
+
+```
+冲销报表生成（§4）
+    │ 写入 yt_reversal_report
+    │ received_status = 0（默认未到账）
+    │ settlement_created_status = 0/2（0=待处理 / 2=无需生成）
+    │ channel_split_status = 0/1（0=未拆 / 1=已拆父行）
+    ↓
+┌─────────────────────────────────────────────────┐
+│  未到账列表（type=unreceived）                     │
+│  WHERE received_status = 0                        │
+│  展示所有未到账记录，等待财务确认到账               │
+└────────────────────────┬────────────────────────┘
+                         │ 财务标记到账
+                         │ received_status → 1
+                         ↓
+┌─────────────────────────────────────────────────┐
+│  已到账列表（默认视图）                             │
+│  WHERE received_status = 1                        │
+│  AND receipted_at 范围                             │
+│  可按频道类型/合约/结算状态等筛选                   │
+└────────────────────────┬────────────────────────┘
+                         │ 生成结算单
+                         │ 筛选: contract_id IS NOT NULL
+                         │        AND channel_split_status = 0
+                         │        AND settlement_created_status = 0
+                         ↓
+┌─────────────────────────────────────────────────┐
+│  结算单生成（§5）                                  │
+│  聚合 → 计算收益 → 生成 tb_settlement              │
+│  回写: settlement_created_status → 1              │
+│  或: settlement_created_status → 2（实发≤1元）     │
+└─────────────────────────────────────────────────┘
+```
+
+---
 
 

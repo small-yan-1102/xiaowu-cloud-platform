@@ -101,7 +101,11 @@
 └─ 否 → 标注 [冒烟: API]，由 api-test-execution 执行
 ```
 
-> `[冒烟: API]` 用例不经过 browser-use，而是由 `api-test-execution` 技能通过 HTTP 请求直接执行。编号格式不变（`SMOKE-{MODULE}-{SEQ}`），在用例头部标注 `[冒烟: API]`。
+> **`[冒烟: API]` 用例规则**：
+> - **生成**：Phase 3 遇到 `[冒烟: API]` 用例时，**必须**使用 Skill 工具调用 `/api-test-case-design` 生成。**禁止**使用模板五（browser-use 冒烟格式）手写。输出格式必须包含 HTTP Method / URL / Headers / Request Body / Expected Response，可被 `api-test-execution` 直接执行。
+> - **执行**：由 `api-test-execution` 技能通过 HTTP 请求直接执行，不经过 browser-use。
+> - **编号**：格式不变（`SMOKE-{MODULE}-{SEQ}`），在用例头部标注 `**执行方式**：[冒烟: API]`。
+> - **存放**：用例按 api-test-case-design 格式**内嵌在冒烟套件文件（`suite_smoke.md`）中**，与 browser-use 用例并列排序。`api-test-execution` 通过 `**执行方式**：[冒烟: API]` 标识识别并接管执行。
 
 ---
 
@@ -228,7 +232,8 @@ AI 执行冒烟测试时具备适度容错能力：
 ☐ 步骤按阶段合理划分（连续同类步骤已合并）
 ☐ 容错策略考虑完善（弹窗/刷新/等待）
 ☐ 异步操作设置超时上限（默认 60 秒），超时标记为环境性能异常（非冒烟失败）
-☐ 纯后端核心逻辑已标注 [冒烟: API]，由 api-test-execution 执行
+☐ [冒烟: API] 用例已通过 `/api-test-case-design` Skill 生成（非模板五手写），格式包含 HTTP Method / URL / Headers / Request Body / Expected Response
+☐ [冒烟: API] 用例内嵌在 suite_smoke.md 中，头部标注 **执行方式**：[冒烟: API]
 ☐ 关联的 PRJ 用例编号已标注在备注中
 ☐ 套件总用例数每模块 3-5 条
 ☐ 全流程时间 < 8 分钟（数据准备 < 3 分钟 + 执行 < 5 分钟）

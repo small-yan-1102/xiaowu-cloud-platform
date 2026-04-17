@@ -57,7 +57,24 @@ triggers:
 
 ---
 
-## CLI 参考（原有文档）
+## AI 执行与脚本的关系
+
+AI 执行 Phase 0-3 时通过 Bash 调用 Python 脚本完成实际 API 操作：
+
+| Phase | AI 职责 | 脚本调用 |
+|-------|--------|---------|
+| Phase 0 | 检查 config.yaml 存在性，引导用户配置 | 无 |
+| Phase 1 | 调用 `--dry-run` 获取差异预览，展示给用户确认 | `python main.py --dry-run [--module X]` |
+| Phase 2 | 用户确认后调用实际同步 | `python main.py [--module X] [--verbose]` |
+| Phase 3 | 解析脚本输出，格式化为同步报告 | 无（读取脚本 stdout） |
+
+**脚本工作目录**：`.claude/skills/yunxiao-sync/scripts/`
+
+**模块依赖链**：`main.py` → `config.py`（加载配置）→ `md_parser.py`（解析用例）→ `field_mapper.py`（字段映射）→ `api_client.py`（HTTP 请求）→ `sync_engine.py`（编排同步流程）
+
+---
+
+## CLI 参考
 
 ## 前置条件
 

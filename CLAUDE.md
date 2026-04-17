@@ -42,11 +42,11 @@
 ## 工作流（单周迭代）
 
 ```
-D1 PRD三方对齐       → /test-prd-review
+D1 PRD三方对齐       → /test-prd-review → /prd-gate → /test-point-extraction
 D2 技术文档审阅      → /tech-doc-review
-D3 测试用例设计      → /test-case-design（Mode A/B/C/D）
-D4 冒烟+测试执行     → /test-execution
-D5 发版+线上回归     → /test-case-design Mode C + /test-execution
+D3 测试用例设计      → /test-case-design（Mode A/B/D/F）→ /test-case-review → /submission-gate
+D4 冒烟+测试执行     → /test-data-preparation → /test-execution + /api-test-execution
+D5 发版+线上回归     → /bug-sync → /test-report → /release-gate
 ```
 
 ## 可用技能命令
@@ -57,7 +57,7 @@ D5 发版+线上回归     → /test-case-design Mode C + /test-execution
 |------|---------|
 | D1 PRD 审阅 | `/test-prd-review` `/prd-gate` `/test-point-extraction` |
 | D2 技术文档 | `/tech-doc-review` |
-| D3 用例设计 | `/test-case-design` `/test-case-review` `/api-test-case-design` |
+| D3 用例设计 | `/test-case-design` `/test-case-review` `/api-test-case-design` `/submission-gate` |
 | D4 测试执行 | `/test-execution` `/api-test-execution` `/test-data-preparation` |
 | D5 发布门禁 | `/bug-sync` `/test-report` `/release-gate` |
 | 巡检工具 | `/check-overrides`（检查 Override 与 HE Base 版本一致性） |

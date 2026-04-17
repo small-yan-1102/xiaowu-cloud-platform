@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "iteration": "2026-Q2_结算系统_逾期结算处理优化",
+  "created_at": "2026-04-15T16:34:42",
+  "updated_at": "2026-04-15T16:46:17",
+  "pipeline_status": "paused",
+  "skills": {
+    "test-prd-review": {
+      "status": "completed",
+      "started_at": "2026-04-15T16:46:17",
+      "completed_at": "2026-04-15T16:46:17",
+      "artifacts": [
+        "review/test-prd-summary.md",
+        "review/test-prd-review-report.md"
+      ],
+      "gate_result": null,
+      "error": null
+    },
+    "prd-gate": {
+      "status": "completed",
+      "started_at": "2026-04-15T16:46:17",
+      "completed_at": "2026-04-15T16:46:17",
+      "artifacts": [],
+      "gate_result": "fail",
+      "error": null
+    },
+    "test-point-extraction": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "tech-doc-review": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "test-case-design": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "test-case-review": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "test-execution": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "bug-sync": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "test-report": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    },
+    "release-gate": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "artifacts": [],
+      "gate_result": null,
+      "error": null
+    }
+  },
+  "current_day": "D1",
+  "current_skill": "prd-gate",
+  "pause_reason": "gate_fail:prd-gate",
+  "resume_from": "prd-gate"
+}

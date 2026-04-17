@@ -1,6 +1,6 @@
 ---
 skill: test-data-preparation
-based_on: harness@1.0.0
+based_on: harness@3.0.0
 he_path: linscode/skills/iteration/testing/test-data-preparation
 override_count: 1
 override_files:

@@ -1,0 +1,31 @@
+# harness-config.yaml — Pipeline 配置
+# 迭代: 2026-Q2_结算系统_逾期结算处理优化
+
+iteration:
+  name: "2026-Q2_结算系统_逾期结算处理优化"
+  version: ""
+
+d1:
+  review_scope: "全量审阅"
+  known_risks: "无"
+  special_focus: "无"
+  prd_path: "input/prd/*.md"
+
+d2:
+  tech_doc_path: "input/tech/*.md"
+  review_mode: "全量审阅"
+  module_ids: "main"
+
+d3:
+  mode: "Mode A"
+  priority_range: "P0-P3"
+
+d4:
+  test_env_url: ""
+  test_account: ""
+  build_version: "未知"
+
+d5:
+  bug_output_format: "Markdown"
+  pass_rate_threshold: "90%"
+  block_skip_limit: "20%"

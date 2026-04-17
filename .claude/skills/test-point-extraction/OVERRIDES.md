@@ -2,11 +2,27 @@
 skill: test-point-extraction
 based_on: harness@1.0.0
 he_path: linscode/skills/iteration/testing/test-point-extraction
-override_count: 1
-last_updated: 2026-04-15
+override_count: 2
+last_updated: 2026-04-16
 ---
 
 # test-point-extraction 项目定制
+
+## 新增 2：Phase 0 必问测试执行策略偏好
+
+**HE 原文位置**：Phase 0 → 问题列表（4 个问题）
+**HE 原文摘要**：Phase 0 问摘要路径、报告路径、提炼范围、历史知识，不问执行策略偏好。Phase 2 中 AI 自行判定 `[AI]`/`[AI+人工]`/`[人工]` 标签
+**定制为**：Phase 0 的 4 个问题之后，**必须**追加第 5 个问题：
+
+> **5. 测试执行策略偏好**：下游用例的预期执行方式是什么？
+>    - 优先 AI：尽量标 `[AI]`，仅确实无法自动化的才标 `[AI+人工]` 或 `[人工]`
+>    - 优先人工：尽量标 `[人工]`，仅明确可自动化的才标 `[AI]`
+>    - 按默认：AI 自行判定（当前 HE Base 逻辑）
+
+⛔ **DO NOT** 跳过此问题。用户回答影响 Phase 2 中每个测试点的可执行性标签分配。
+
+用户选"优先 AI"时，Phase 2 判定规则放宽——有疑问的测试点默认标 `[AI]` 而非 `[AI+人工]`。
+用户选"优先人工"时，Phase 2 判定规则收紧——有疑问的测试点默认标 `[人工]`。
 
 ## 覆盖 1：AI 可执行性标签细分
 
