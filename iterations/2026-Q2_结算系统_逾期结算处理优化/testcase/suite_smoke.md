@@ -22,6 +22,23 @@
 
 ---
 
+## 执行清单（状态记录入口）
+
+> **操作说明**：
+> - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
+> - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+
+- [ ] **SMOKE-OVERDUE-001** 导入无归属视频 → 异步完成 → 列表出现新记录
+- [ ] **SMOKE-OVERDUE-EX-001** 导入幂等拦截 — 同月份重复导入被拒绝
+- [ ] **SMOKE-OVERDUE-002** 批量拆分 → 记录进入已拆分Tab
+- [ ] **SMOKE-OVERDUE-EX-002** 拆分幂等拦截 — 已存在未结算子集时拒绝
+- [ ] **SMOKE-OVERDUE-003** [冒烟: API] MQ 登记同步 → status 0→1 + 字段同步
+- [ ] **SMOKE-OVERDUE-004** [冒烟: API] MQ 登记同步 → status 0→3（跨期正常未拆分）
+- [ ] **SMOKE-OVERDUE-005** 跨期正常未拆分 Tab → 批量拆分 → 已拆分（原状态=跨期正常）
+
+---
+
 ## 数据准备（全套件共用）
 
 > 在执行冒烟用例前，通过 API 调用准备以下数据。预计 ~2 分钟。
@@ -164,7 +181,7 @@
   {
     "videoCompositions": "[{\"videoId\":\"{引用:testVideoId}\",\"channelId\":\"{引用:testChannelId}\",\"relatedType\":\"OVERDUE\",\"pipelineId\":\"test-pipeline-001\",\"compositionName\":\"测试子集\",\"teamId\":\"1988839584685428736\",\"teamName\":\"HELLO BEAR\",\"publishedDate\":\"2026-01-15\",\"relatedAt\":\"2026-04-15 10:00:00\"}]"
   }
-  ```
+  > **[V4.5 注]**：消息体中 `relatedType` 字段保留但系统不再以此过滤。技术文档 §2.1.1 已移除 relatedType 过滤条件，对所有已登记视频统一执行逾期判定。此字段值不影响测试结果。
 
 **Step 2 — 等待 MQ 消费完成**：
 
@@ -268,6 +285,7 @@
     "videoCompositions": "[{\"videoId\":\"{引用:testVideoId}\",\"channelId\":\"{引用:testChannelId}\",\"relatedType\":\"OVERDUE\",\"pipelineId\":\"test-pipeline-002\",\"compositionName\":\"测试子集-跨期\",\"teamId\":\"1988839584685428736\",\"teamName\":\"HELLO BEAR\",\"publishedDate\":\"{引用:testPublishedDate}\",\"relatedAt\":\"{当月15日，确保≤发布次月28日}\"}]"
   }
   ```
+  > **[V4.5 注]**：同 SMOKE-003，`relatedType` 字段保留但系统不再以此过滤，不影响测试结果。
 
 **Step 2 — 等待 MQ 消费完成**：
 

@@ -2,8 +2,8 @@
 skill: test-case-review
 based_on: harness@1.0.0
 he_path: linscode/skills/iteration/testing/test-case-review
-override_count: 3
-last_updated: 2026-04-15
+override_count: 4
+last_updated: 2026-04-17
 ---
 
 # test-case-review 项目定制
@@ -72,3 +72,29 @@ last_updated: 2026-04-15
 ```
 
 审核报告 §五 的颗粒度问题可直接作为 `/test-case-design Mode F` 的输入，用户说"按审核报告优化颗粒度"时自动触发 Mode F。
+
+## 新增 4：Phase 2 新增"执行记录列格式"检查项
+
+**HE 原文位置**：Phase 2 → 4 个检查维度之外
+**HE 原文摘要**：无对套件顶部执行顺序表结构的格式检查
+**定制为**：Phase 2 新增格式硬性检查项（独立于维度评分，失败直接标记审核不通过）：
+
+```
+☐ 套件顶部「执行顺序」表最右侧有且仅有一列「执行记录」
+☐ 单元格状态前缀属于五态白名单：⏸ 待执行 / ✅ 通过 / ❌ 失败 / 🚫 阻塞 / ⏭ 跳过
+☐ 新生成套件（未执行场景）默认值为 `⏸ 待执行`（无分隔符，无日期/备注）
+☐ 非待执行状态使用 ` · ` 分隔状态/日期/备注（如 `✅ 通过 · 2026-04-17`）
+```
+
+**违规行为**：
+- 缺列或保留旧"三列"结构（执行状态/执行日期/备注） → 审核不通过
+- 状态前缀不在白名单（如出现"可执行""pass""done""pending"） → 审核不通过，列出每处违规的用例编号和实际值
+- 分隔符混用 `|` `/` `-` 而非 ` · ` → 审核不通过
+- 单元格出现换行或超过一行的详情 → 审核提示修复（详情应落 execution_report）
+
+审核报告在 §六 审核结论中新增"**套件格式合规性**"小节，列出上述检查结果。任一项失败 → 整体审核结论为"不通过"（优先级高于颗粒度评分）。
+
+**规范引用**：
+- 生成规范见 `.claude/skills/test-case-design/OVERRIDES.md` §新增 10
+- API 套件规范见 `.claude/skills/api-test-case-design/OVERRIDES.md` §新增 3
+- 五态语义与 `.claude/skills/test-execution/OVERRIDES.md` §覆盖 2 对齐

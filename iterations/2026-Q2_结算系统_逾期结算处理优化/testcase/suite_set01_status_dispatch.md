@@ -76,6 +76,48 @@ SET-01 测试需要在两个系统中准备关联数据：
 
 ---
 
+## 执行清单（状态记录入口）
+
+> **操作说明**：
+> - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
+> - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+
+**① 正向分发**：
+
+- [ ] **OVERDUE-S01-001** 跨期正常分发：登记日≤次月28日 → status=3（P0）
+- [ ] **OVERDUE-S01-002** 逾期登记分发：登记日>次月28日 → status=1（P0）
+- [ ] **OVERDUE-S01-003** 跨系统 E2E 联动：剧老板登记 → MQ → 结算系统状态变更（P0）
+- [ ] **OVERDUE-S01-004** 多月份记录批量分发：同视频多月份逐条独立判定（P1）
+
+**② 边界值与时间精度**：
+
+- [ ] **OVERDUE-S01-005** 边界值：登记日恰好等于发布次月第28日 → status=3（P1）
+- [ ] **OVERDUE-S01-006** 边界值：登记日恰好等于发布次月第29日 → status=1（P1）
+- [ ] **OVERDUE-S01-007** 时间精度：28日 23:59:59 → status=3（未逾期）（P1）
+- [ ] **OVERDUE-S01-008** 时间精度：29日 00:00:00 → status=1（逾期）（P1）
+
+**③ 异常与降级**：
+
+- [ ] **OVERDUE-S01-009** 无匹配记录：结算系统无该视频 status=0 记录 → 登记正常完成（P1）
+- [ ] **OVERDUE-S01-010** DB 写入失败 → 登记成功 + 后台异常日志（P1）
+
+**④ 并发与幂等**：
+
+- [ ] **OVERDUE-S01-011** 并发登记同一视频 → 第二个请求被拦截（P1）
+- [ ] **OVERDUE-S01-013** 重复登记幂等：status=1 记录收到重复 MQ → 仅同步字段不改状态（P1）
+- [ ] **OVERDUE-S01-017** 并发批量拆分：两个会话同时拆分同维度记录（P1）
+
+**⑤ videoTag（技术漏爬）**：
+
+- [ ] **OVERDUE-S01-014** videoTag 计算验证：scrapedAt > 发布次月15日 → videoTag=1（P1）
+- [ ] **OVERDUE-S01-015** videoTag 边界值：scrapedAt = 发布次月15日 23:59:59 → videoTag=null（P1）
+- [ ] **OVERDUE-S01-016** videoTag 双表一致性：MQ 同步后两表 videoTag 一致（P1）
+
+**暂缓**：~~OVERDUE-S01-012~~（设计阶段暂缓，不执行）
+
+---
+
 ## P0 用例
 
 ---
@@ -430,27 +472,33 @@ SET-01 测试需要在两个系统中准备关联数据：
    [验证: DB 查询确认记录存在]
 3. [数据准备: 环境预置] SYS-A 剧老板中该视频为未登记状态
 
-**测试步骤**：
-1. [SYS-A] 调用剧老板 `POST /appApi/videoComposition/bind` 触发登记（此时 registrationTime 由系统自动写入当前时间）
-2. 等待 MQ 消费完成（最多 30 秒）
-3. [SYS-B DB] 将 registrationTime 回填为精确边界值：
+**测试步骤**（方案 A：DB 回填 + 重新触发 MQ）：
+1. [SYS-B DB] 确保 `video_composition_overdue` 中存在 status=0 的记录，将 registrationTime 回填为精确边界值：
    ```sql
    UPDATE video_composition_overdue
-   SET registration_time = '2025-11-28 23:59:59'
-   WHERE video_id = '{测试视频ID_007}'
+   SET status = 0, registration_time = NULL
+   WHERE video_id = '{测试视频ID_007}';
    ```
-   > 注：因 API 无法控制秒级时间，此步骤通过 DB 直接设置精确时间点。若系统判定逻辑在 MQ 消费时已执行（status 已变更），则本用例需改为：先通过 DB 预设 registrationTime → 再验证判定结果。具体取决于代码实现时机。
-4. [SYS-B] 验证状态
+2. [SYS-B DB] 预设 `video_composition` 中该视频的 `related_at` 为精确边界值：
+   ```sql
+   UPDATE video_composition
+   SET related_at = '2025-11-28 23:59:59'
+   WHERE video_id = '{测试视频ID_007}';
+   ```
+   > `related_at` 是 syncOverdueSettlementStatus 中 registrationDate 的来源（COALESCE(changeRelatedAt, relatedAt)）
+3. [SYS-A] 调用剧老板 bind 触发登记，产生 MQ 消息，使 syncOverdueSettlementStatus 重新执行判定
+4. 等待 MQ 消费完成（最多 30 秒）
+5. [SYS-B] 验证状态
 
 **预期结果**：
-1. [断言: DB-Query] `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_007}' AND registration_time='2025-11-28 23:59:59' ORDER BY id DESC LIMIT 1` 返回 `status=3`（L1）
-   判定依据：`registration_time`(2025-11-28 23:59:59) ≤ 次月28日(2025-11-28 23:59:59) → 未逾期 → status=3
+1. [断言: DB-Query] `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_007}' ORDER BY id DESC LIMIT 1` 返回 `status=3`（L1）
+   判定依据：registrationDate(2025-11-28 23:59:59) ≤ deadline(2025-11-28 23:59:59) → 未逾期 → status=3
    比对字段：`status`=3
 
 **清理步骤**：见文档末尾 [清理 SQL 汇总](#清理SQL汇总) → OVERDUE-S01-007
 
 **是否需要人工介入**：否
-**备注**：⚠️ **已确认为秒级比较**：代码 `calculateRelatedType()` 中截止时间设为次月28日 **23:59:59**（`Calendar.HOUR_OF_DAY=23, MINUTE=59, SECOND=59`），使用 `Date.after(deadline)` 比较（毫秒精度）。因此"≤次月28日"的实际含义是"≤次月28日 23:59:59.000"。精确时间边界需通过 DB 回填验证，API 触发无法控制秒级时间。
+**备注**：⚠️ **已确认为秒级比较**：代码 `calculateRelatedType()` 中截止时间设为次月28日 **23:59:59**（`Calendar.HOUR_OF_DAY=23, MINUTE=59, SECOND=59`），使用 `Date.after(deadline)` 比较（毫秒精度）。**执行方案 A**：通过 DB 预设 `video_composition.related_at` 为精确边界值，再触发 MQ 消费使 syncOverdueSettlementStatus 基于预设时间重新判定。
 
 ---
 
@@ -472,25 +520,30 @@ SET-01 测试需要在两个系统中准备关联数据：
    - `published_date` = `2025-10-01`（固定值，次月28日=2025-11-28）
    [验证: DB 查询确认记录存在]
 
-**测试步骤**：
-1. [SYS-A] 调用剧老板 bind 触发登记
-2. 等待 MQ 消费完成
-3. [SYS-B DB] 将 registrationTime 回填为：
+**测试步骤**（方案 A：DB 回填 + 重新触发 MQ）：
+1. [SYS-B DB] 确保记录为 status=0，预设 `video_composition` 中该视频的 `related_at` 为精确边界值：
    ```sql
    UPDATE video_composition_overdue
-   SET registration_time = '2025-11-29 00:00:00'
-   WHERE video_id = '{测试视频ID_008}'
+   SET status = 0, registration_time = NULL
+   WHERE video_id = '{测试视频ID_008}';
+   
+   UPDATE video_composition
+   SET related_at = '2025-11-29 00:00:00'
+   WHERE video_id = '{测试视频ID_008}';
    ```
+2. [SYS-A] 调用剧老板 bind 触发登记，产生 MQ 消息重新执行判定
+3. 等待 MQ 消费完成（最多 30 秒）
 4. [SYS-B] 验证状态
 
 **预期结果**：
-1. [断言: DB-Query] `registration_time='2025-11-29 00:00:00'` > `2025-11-28`（次月28日），满足 R1">次月28日"→ 逾期 → `status=1`（L1）
+1. [断言: DB-Query] `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_008}' ORDER BY id DESC LIMIT 1` 返回 `status=1`（L1）
+   判定依据：registrationDate(2025-11-29 00:00:00) > deadline(2025-11-28 23:59:59) → 逾期 → status=1
    比对字段：`status`=1
 
 **清理步骤**：见文档末尾 [清理 SQL 汇总](#清理SQL汇总) → OVERDUE-S01-008
 
 **是否需要人工介入**：否
-**备注**：与 OVERDUE-S01-007 对称，验证 29日 00:00:00 已越过边界（`29日 00:00:00.after(28日 23:59:59) = true` → 逾期）。同样依赖 DB 回填方案。
+**备注**：与 OVERDUE-S01-007 对称，验证 29日 00:00:00 已越过边界（`29日 00:00:00.after(28日 23:59:59) = true` → 逾期）。**执行方案 A**：通过 DB 预设 `video_composition.related_at` 为精确边界值，再触发 MQ 重新判定。
 
 ---
 
@@ -623,7 +676,7 @@ SET-01 测试需要在两个系统中准备关联数据：
 > ⚠️ **用例范围说明**：本用例验证的是"完全相同参数的重复登记"（幂等性），不包含"变更登记"场景。
 > **重复登记 vs 变更登记的区别**：
 > - **重复登记**：相同视频、相同参数再次 bind → 剧老板可能拦截，或 MQ 重发但结算系统幂等处理
-> - **变更登记**：已登记视频修改关联信息（换子集/换套餐）→ `changeRelatedAt` 有值 → `calculateRelatedType()` 基于新时间**重新计算** relatedType，可能改变逾期判定结果
+> - **变更登记**：已登记视频修改关联信息（换子集/换套餐）→ `changeRelatedAt` 有值 → 按产品选项A，**不重新判定** relatedType，保持首次判定结果（跨期正常一旦判定就不再变更）
 > 变更登记属于独立业务场景，如需覆盖应单独设计用例。
 
 **前置条件**：
@@ -633,7 +686,7 @@ SET-01 测试需要在两个系统中准备关联数据：
    - `status` = 1
    [验证: `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_013}' AND status=1` 返回 ≥ 1 条]
 
-> **为什么只测 status=1 不测 status=3**：**[V4.5 更新]** 技术文档 2026041601 版 §2.1.1 步骤3 已将查询条件从 `status IN (0, 1)` 改为 `status = 0`。status=1 和 status=3 的记录均**不会被查出**，幂等性由查询条件直接保证。这同时意味着：若一个已流转的视频（status=1 或 3）做了变更登记，overdue 表的 status 不会被重新计算——这是一个**潜在的需求遗漏**（见 Q-10）。
+> **为什么只测 status=1 不测 status=3**：**[V4.5 更新]** 技术文档 2026041601 版 §2.1.1 步骤3 已将查询条件从 `status IN (0, 1)` 改为 `status = 0`。status=1 和 status=3 的记录均**不会被查出**，幂等性由查询条件直接保证。这同时意味着：若一个已流转的视频（status=1 或 3）做了变更登记，overdue 表的 status 不会被重新计算——**已确认符合产品选项A预期**（跨期正常一旦判定就不再变更，见 Q-10）。
 
 **测试数据**：
 
@@ -656,18 +709,19 @@ SET-01 测试需要在两个系统中准备关联数据：
 4. [SYS-B DB] 查询状态是否变化
 
 **预期结果**：
-1. [断言: API] 以下两种结果均为通过（L1）：
-   - **结果 A**：剧老板 bind 返回错误码（如"该视频已登记"），MQ 未发出 → 结算系统状态不变（幂等由剧老板保证）
-   - **结果 B**：剧老板 bind 返回 `code=0`，MQ 发出 → 结算系统 `syncOverdueSettlementStatus` 查到 status=1 的记录 → 仅同步字段，**status 保持 1 不变**
-2. [断言: DB-Query] `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_013}' AND status=1 LIMIT 1` 返回 `status=1`，未发生重复状态流转（L1）
+1. [断言: API] 剧老板 bind 返回错误码，message 包含"已登记"或"已关联"（L1）
+   — 代码确认：`VideoCompositionBindCmd.java:104-107`，普通登记时 `related=1` → 抛 `VIDEO_ALREADY_RELATED`
+2. [断言: 无 MQ] MQ 消息未发出（bind 失败不触发 MQ）（L1）
+3. [断言: DB-Query] `SELECT status FROM video_composition_overdue WHERE video_id='{测试视频ID_013}' AND status=1 LIMIT 1` 返回 `status=1`，状态不变（L1）
    比对字段：`status`=1（精确匹配）
 
 **清理步骤**：无（未改变数据状态）
 
 **是否需要人工介入**：否
 **备注**：
-- ⚠️ **依赖 S-8 产品回复**。当前按代码逆向文档设计（`syncOverdueSettlementStatus` 对 status=1 只同步字段不改 status）。
-- ⚠️ **潜在遗漏 Q-10**：`syncOverdueSettlementStatus` 查询条件为 `status IN (0, 1)`，不包含 status=3。若 status=3 的视频做变更登记导致 relatedType 从 NORMAL 变为 OVERDUE，overdue 表的 status=3 不会被更新为 1。需确认产品是否期望此场景下更新 status。
+- ✅ **S-8 已确认**：剧老板 bind 接口已有重复登记拦截（`VideoCompositionBindCmd.java:104-107`），普通登记时 related=1 直接拒绝，MQ 不发出。幂等由剧老板端保证。
+- **[V4.5 更新]** 技术文档 2026041601 版 §2.1.1 步骤3 已将查询条件从 `status IN (0, 1)` 改为 `status = 0`。status=1 和 status=3 的记录均不会被查出，幂等性由查询条件直接保证。
+- ✅ **Q-10 已确认（2026-04-20）**：status=3 的视频做变更登记后，overdue 表不会更新 — 符合产品选项A预期（跨期正常一旦判定就不再变更，财务按"跨期正常"拆分，不扣违约金）。技术文档有意设计，见 §2.1.1 步骤3 注释。
 
 ---
 
@@ -892,7 +946,7 @@ SET-01 测试需要在两个系统中准备关联数据：
 - [ ] 剧老板 bind API 的完整参数列表是否已确认（compositionId 等作品关联参数）
 - [ ] 测试环境中是否有满足条件的未登记视频（两系统均有对应数据）
 - [ ] 边界日期用例（005~008）的执行日期约束是否可接受，或需改为 DB 回填方案
-- [ ] OVERDUE-S01-013 的预期结果待 S-8 产品回复后更新
+- [x] OVERDUE-S01-013 的预期结果：S-8（重复登记拦截）与 Q-10（变更登记不重新判定，产品选项A）均已确认，2026-04-20 已更新
 
 ---
 

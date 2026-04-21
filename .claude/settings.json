@@ -69,7 +69,10 @@
       "Bash(powershell.exe -Command \"Rename-Item -Path 'E:\\\\Orange\\\\API Key - mini Claude Code' -NewName 'mini-claude-harness' -Force\")",
       "Edit(/.claude/skills/api-test-case-design/**)",
       "Edit(/.claude/skills/test-point-extraction/**)",
-      "Edit(/.claude/skills/acceptance-case-design/**)"
+      "Edit(/.claude/skills/acceptance-case-design/**)",
+      "Edit(/.claude/skills/test-execution/**)",
+      "Edit(/.claude/skills/api-test-execution/**)",
+      "Edit(/.claude/skills/test-case-review/**)"
     ],
     "additionalDirectories": [
       "e:\\Orange\\API Key - mini Claude Code",
