@@ -133,7 +133,7 @@ Mode B（补充风险场景）：
 
 - VSCode 原生支持 Markdown 任务列表 `- [ ]` 的鼠标点击切换，**不支持**表格内 checkbox
 - 单源原则：状态只在一处记录，避免表格列与清单段不同步
-- 真源分工：清单段 = 进度快照（扫一眼知道哪些过了）；`execution/execution_report_*.md` = 审计证据（失败时查原因）
+- 真源分工：清单段 = 进度快照（扫一眼知道哪些过了）；`report/execution_report_*.md` = 审计证据（失败时查原因）
 
 ### 段落骨架（必填）
 
@@ -145,7 +145,7 @@ Mode B（补充风险场景）：
 > **操作说明**：
 > - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
 > - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
-> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `report/execution_report_*.md`
 
 {分组勾选列表}
 
@@ -175,8 +175,8 @@ Mode B（补充风险场景）：
 
 **AI 执行后示例**（由 test-execution / api-test-execution 回写）：
 ```
-- [x] **SMOKE-001** 导入无归属视频（P0） · ✅ AI 2026-04-17 · [报告](execution/execution_report_20260417.md#smoke-001)
-- [ ] **SMOKE-002** 批量拆分（P0） · ❌ AI 2026-04-17 · [失败详情](execution/execution_report_20260417.md#smoke-002)
+- [x] **SMOKE-001** 导入无归属视频（P0） · ✅ AI 2026-04-17 · [报告](report/execution_report_20260417.md#smoke-001)
+- [ ] **SMOKE-002** 批量拆分（P0） · ❌ AI 2026-04-17 · [失败详情](report/execution_report_20260417.md#smoke-002)
 - [ ] **SMOKE-003** MQ 同步（P0） · 🚫 AI · 前置数据缺失
 ```
 
@@ -203,7 +203,7 @@ Mode B（补充风险场景）：
 - 本覆盖项约束**生成阶段**的格式（默认全部 `- [ ]`）
 - 执行阶段的回写逻辑由 `test-execution` / `api-test-execution` OVERRIDES 定义（见各自覆盖 2）
 - 回写目标：**本清单段对应行**（勾选 + 行尾追加 AI 标记 + 报告链接）
-- 审计证据：`execution/execution_report_*.md` 为**真源**（失败详情/截图/步骤明细），本清单是进度索引
+- 审计证据：`report/execution_report_*.md` 为**真源**（失败详情/截图/步骤明细），本清单是进度索引
 - 冲突处理：以 `execution_report` 为最终事实；清单段被人工与 AI 共同维护，按最后修改者为准
 
 ### 人工填写便利性

@@ -72,7 +72,7 @@ last_updated: 2026-04-17
 
 ### 设计动机
 
-同 test-case-design 新增 10——VSCode 不支持表格内 checkbox 切换，独立段 Markdown 任务列表可鼠标点击。单源原则避免双轨不同步；完整证据在 `execution/execution_report_*.md`。
+同 test-case-design 新增 10——VSCode 不支持表格内 checkbox 切换，独立段 Markdown 任务列表可鼠标点击。单源原则避免双轨不同步；完整证据在 `report/execution_report_*.md`。
 
 ### 段落骨架（必填）
 
@@ -84,7 +84,7 @@ last_updated: 2026-04-17
 > **操作说明**：
 > - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
 > - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
-> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `report/execution_report_*.md`
 
 {按阶段/优先级分组的勾选列表}
 ```
@@ -103,8 +103,8 @@ last_updated: 2026-04-17
 
 **AI 执行后**（由 api-test-execution 回写）：
 ```
-- [x] **API-S03-001** 任务互斥：重复导入被拒（P0） · ✅ AI 2026-04-17 · [报告](execution/execution_report_20260417.md#api-s03-001)
-- [ ] **API-S03-002** 任务互斥：超时失效（P1） · ❌ AI 2026-04-17 · [失败详情](execution/execution_report_20260417.md#api-s03-002)
+- [x] **API-S03-001** 任务互斥：重复导入被拒（P0） · ✅ AI 2026-04-17 · [报告](report/execution_report_20260417.md#api-s03-001)
+- [ ] **API-S03-002** 任务互斥：超时失效（P1） · ❌ AI 2026-04-17 · [失败详情](report/execution_report_20260417.md#api-s03-002)
 ```
 
 ### 硬性约束
@@ -127,4 +127,4 @@ last_updated: 2026-04-17
 - 本覆盖项约束**生成阶段**的格式
 - 执行阶段的回写逻辑由 `api-test-execution` OVERRIDES 覆盖 2 定义
 - 回写目标：**本清单段对应行**（勾选 + 行尾追加 AI 标记 + 报告链接）
-- 审计证据：`execution/execution_report_*.md` 为**真源**
+- 审计证据：`report/execution_report_*.md` 为**真源**

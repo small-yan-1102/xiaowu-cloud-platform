@@ -56,7 +56,7 @@ last_updated: 2026-04-17
 **字段说明**：
 - `{编号}`、`{名称}`、`{优先级}` 来自清单段原行，**必须原样保留**
 - `{日期}` 格式 `YYYY-MM-DD`，取执行当天
-- `{execution_report}` 相对路径如 `execution/execution_report_20260417.md`
+- `{execution_report}` 相对路径如 `report/execution_report_20260417.md`（与老迭代 `report/functional_test_report_*.md` 同目录）
 - `{锚点}` 用例编号小写（如 `api-s03-001`）
 
 ### 回写时机与失败处理
@@ -69,7 +69,7 @@ last_updated: 2026-04-17
 
 ### 真源约定
 
-- `execution/execution_report_*.md` 为**审计真源**（承载 HTTP 响应体/断言明细/清理状态）
+- `report/execution_report_*.md` 为**审计真源**（承载 HTTP 响应体/断言明细/清理状态）
 - 套件「执行清单」段为**进度真源**
 - 两者冲突时 `/test-report` 汇总以 `execution_report` 为准
 - **禁止**在清单段行里写超过一行的详情

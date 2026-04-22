@@ -81,38 +81,38 @@ SET-01 测试需要在两个系统中准备关联数据：
 > **操作说明**：
 > - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
 > - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
-> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `report/execution_report_*.md`
 
 **① 正向分发**：
 
-- [ ] **OVERDUE-S01-001** 跨期正常分发：登记日≤次月28日 → status=3（P0）
-- [ ] **OVERDUE-S01-002** 逾期登记分发：登记日>次月28日 → status=1（P0）
-- [ ] **OVERDUE-S01-003** 跨系统 E2E 联动：剧老板登记 → MQ → 结算系统状态变更（P0）
-- [ ] **OVERDUE-S01-004** 多月份记录批量分发：同视频多月份逐条独立判定（P1）
+- [x] **OVERDUE-S01-001** 跨期正常分发：登记日≤次月28日 → status=3（P0） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-001)
+- [x] **OVERDUE-S01-002** 逾期登记分发：登记日>次月28日 → status=1（P0） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-002)
+- [x] **OVERDUE-S01-003** 跨系统 E2E 联动：剧老板登记 → MQ → 结算系统状态变更（P0） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-003)
+- [x] **OVERDUE-S01-004** 多月份记录批量分发：同视频多月份逐条独立判定（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-004)
 
 **② 边界值与时间精度**：
 
-- [ ] **OVERDUE-S01-005** 边界值：登记日恰好等于发布次月第28日 → status=3（P1）
-- [ ] **OVERDUE-S01-006** 边界值：登记日恰好等于发布次月第29日 → status=1（P1）
-- [ ] **OVERDUE-S01-007** 时间精度：28日 23:59:59 → status=3（未逾期）（P1）
-- [ ] **OVERDUE-S01-008** 时间精度：29日 00:00:00 → status=1（逾期）（P1）
+- [x] **OVERDUE-S01-005** 边界值：登记日恰好等于发布次月第28日 → status=3（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-005)
+- [x] **OVERDUE-S01-006** 边界值：登记日恰好等于发布次月第29日 → status=1（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-006)
+- [x] **OVERDUE-S01-007** 时间精度：28日 23:59:59 → status=3（未逾期）（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-007)
+- [x] **OVERDUE-S01-008** 时间精度：29日 00:00:00 → status=1（逾期）（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-008)
 
 **③ 异常与降级**：
 
-- [ ] **OVERDUE-S01-009** 无匹配记录：结算系统无该视频 status=0 记录 → 登记正常完成（P1）
-- [ ] **OVERDUE-S01-010** DB 写入失败 → 登记成功 + 后台异常日志（P1）
+- [x] **OVERDUE-S01-009** 无匹配记录：结算系统无该视频 status=0 记录 → 登记正常完成（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-009)
+- [x] **OVERDUE-S01-010** DB 写入失败 → 登记成功 + 后台异常日志（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-010) · 行锁模拟验证
 
 **④ 并发与幂等**：
 
-- [ ] **OVERDUE-S01-011** 并发登记同一视频 → 第二个请求被拦截（P1）
-- [ ] **OVERDUE-S01-013** 重复登记幂等：status=1 记录收到重复 MQ → 仅同步字段不改状态（P1）
-- [ ] **OVERDUE-S01-017** 并发批量拆分：两个会话同时拆分同维度记录（P1）
+- [ ] **OVERDUE-S01-011** 并发登记同一视频 → 第二个请求被拦截（P1） · ❌ AI 2026-04-22 · [失败详情](../report/execution_report_20260422.md#overdue-s01-011) · 🐛 疑似 TOCTOU 并发缺陷（两次并发 bind 均返回 200）
+- [x] **OVERDUE-S01-013** 重复登记幂等：status=1 记录收到重复 MQ → 仅同步字段不改状态（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-013)
+- [ ] **OVERDUE-S01-017** 并发批量拆分：两个会话同时拆分同维度记录（P1） · 🚫 AI 2026-04-22 · 认证已破解（Authorization Bearer UUID），测试数据需完整上下游链路无法外部构造，[详情](../report/execution_report_20260422.md#overdue-s01-017)
 
 **⑤ videoTag（技术漏爬）**：
 
-- [ ] **OVERDUE-S01-014** videoTag 计算验证：scrapedAt > 发布次月15日 → videoTag=1（P1）
-- [ ] **OVERDUE-S01-015** videoTag 边界值：scrapedAt = 发布次月15日 23:59:59 → videoTag=null（P1）
-- [ ] **OVERDUE-S01-016** videoTag 双表一致性：MQ 同步后两表 videoTag 一致（P1）
+- [x] **OVERDUE-S01-014** videoTag 计算验证：scrapedAt > 发布次月15日 → videoTag=1（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-014)
+- [x] **OVERDUE-S01-015** videoTag 边界值：scrapedAt = 发布次月15日 23:59:59 → videoTag=null（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-015)
+- [x] **OVERDUE-S01-016** videoTag 双表一致性：MQ 同步后两表 videoTag 一致（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-016)
 
 **暂缓**：~~OVERDUE-S01-012~~（设计阶段暂缓，不执行）
 

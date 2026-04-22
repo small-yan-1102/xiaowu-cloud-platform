@@ -27,15 +27,15 @@
 > **操作说明**：
 > - **人工**：鼠标点击 `- [ ]` 切换为 `- [x]` 表示**执行通过**；失败/阻塞/跳过**不勾选**，行尾追加 ` · ❌ BUG-{id}` / ` · 🚫 {原因}` / ` · ⏭ {原因}`
 > - **AI（test-execution / api-test-execution）**：执行完成后自动勾选并追加 ` · ✅ AI {日期} · [报告](...)` 或 ` · ❌ AI {日期} · [失败详情](...)`
-> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `execution/execution_report_*.md`
+> - **真源定位**：本清单为**进度真源**；完整执行证据（步骤/断言/截图/堆栈）在 `report/execution_report_*.md`
 
-- [ ] **SMOKE-OVERDUE-001** 导入无归属视频 → 异步完成 → 列表出现新记录
-- [ ] **SMOKE-OVERDUE-EX-001** 导入幂等拦截 — 同月份重复导入被拒绝
-- [ ] **SMOKE-OVERDUE-002** 批量拆分 → 记录进入已拆分Tab
-- [ ] **SMOKE-OVERDUE-EX-002** 拆分幂等拦截 — 已存在未结算子集时拒绝
-- [ ] **SMOKE-OVERDUE-003** [冒烟: API] MQ 登记同步 → status 0→1 + 字段同步
-- [ ] **SMOKE-OVERDUE-004** [冒烟: API] MQ 登记同步 → status 0→3（跨期正常未拆分）
-- [ ] **SMOKE-OVERDUE-005** 跨期正常未拆分 Tab → 批量拆分 → 已拆分（原状态=跨期正常）
+- [x] **SMOKE-OVERDUE-001** 导入无归属视频 → 异步完成 → 列表出现新记录
+- [x] **SMOKE-OVERDUE-EX-001** 导入幂等拦截 — 同月份重复导入被拒绝
+- [x] **SMOKE-OVERDUE-002** 批量拆分 → 记录进入已拆分Tab
+- [x] **SMOKE-OVERDUE-EX-002** 拆分幂等拦截 — 已存在未结算子集时拒绝
+- [x] **SMOKE-OVERDUE-003** [冒烟: API] MQ 登记同步 → status 0→1 + 字段同步
+- [x] **SMOKE-OVERDUE-004** [冒烟: API] MQ 登记同步 → status 0→3（跨期正常未拆分）
+- [x] **SMOKE-OVERDUE-005** 跨期正常未拆分 Tab → 批量拆分 → 已拆分（原状态=跨期正常）
 
 ---
 

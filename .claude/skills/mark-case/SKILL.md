@@ -133,5 +133,5 @@ triggers:
 ## 与其他 Skill 的衔接
 
 - **test-execution / api-test-execution**：AI 自动执行时会直接回写清单段（附 AI 标记 + 日期 + 报告链接），无需走 `/mark-case`。本命令**专供人工使用**。
-- **真源约定**：本命令只改套件内「执行清单」段。失败详情、截图、步骤明细仍需由 AI 执行时落 `execution/execution_report_*.md`。`/mark-case` **不创建**执行报告。
+- **真源约定**：本命令只改套件内「执行清单」段。失败详情、截图、步骤明细仍需由 AI 执行时落 `report/execution_report_*.md`。`/mark-case` **不创建**执行报告。
 - **格式约束**：完全遵循 `.claude/skills/test-case-design/OVERRIDES.md` §新增 10、`.claude/skills/api-test-case-design/OVERRIDES.md` §新增 3 和 `.claude/skills/test-execution/OVERRIDES.md` §覆盖 2。

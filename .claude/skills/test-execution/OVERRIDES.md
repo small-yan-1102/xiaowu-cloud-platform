@@ -51,7 +51,7 @@ last_updated: 2026-04-17
 **字段说明**：
 - `{编号}`、`{名称}`、`{优先级}` 来自清单段原行，**必须原样保留**
 - `{日期}` 格式 `YYYY-MM-DD`，取执行当天
-- `{execution_report}` 相对路径如 `execution/execution_report_20260417.md`
+- `{execution_report}` 相对路径如 `report/execution_report_20260417.md`（与老迭代 `report/functional_test_report_*.md` 同目录）
 - `{锚点}` 用例编号小写（如 `smoke-001`、`overdue-s01-003`）
 - 阻塞无执行日期时可省略日期字段
 
@@ -65,7 +65,7 @@ last_updated: 2026-04-17
 
 ### 真源约定
 
-- `execution/execution_report_*.md` 为**审计真源**（承载失败详情/截图/步骤明细）
+- `report/execution_report_*.md` 为**审计真源**（承载失败详情/截图/步骤明细）
 - 套件「执行清单」段为**进度真源**（人工 + AI 共享的状态记录入口）
 - 两者冲突时 `/test-report` 汇总以 `execution_report` 为准
 - **禁止**在清单段行里写超过一行的详情；超出内容一律放 `execution_report`
