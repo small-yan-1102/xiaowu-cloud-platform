@@ -18,26 +18,28 @@
 > 规则文件已按「自动加载」和「按需读取」分层管理，减少每次对话的 context 开销。
 > 敏感凭证（密码等）已分离至 `.claude/secrets/credentials.md`（不自动加载，已加入 .gitignore）。
 
-### 自动加载（`.claude/rules/`，每次对话注入，~1.5KB）
+### 自动加载（`.claude/rules/`，每次对话注入，~1KB）
 
 | 文件 | 职责 |
 |------|------|
-| `rules.md` | 基础规则（语言、环境、角色）+ D1-D5 工作流映射 + Skill 衔接关系 |
+| `rules.md` | 基础规则（语言、环境、角色）+ 测试执行模式 + 文件加载分层约定 |
 
 ### 按需读取（`.claude/docs/`，Skill 执行时加载）
 
 | 文件 | 职责 | 关联 Skill |
 |------|------|-----------|
+| `workflow-mapping.md` | D1-D5 工作流映射与 Skill 衔接表 | 跨阶段查阅 |
 | `ai_test_case_design.md` | 测试用例设计规范（附录 A-G、确定性断言、人工介入分级、静态数据池） | test-case-design |
 | `smoke_test_design.md` | 冒烟测试设计规范 | test-case-design Mode D |
 | `ai_execution_strategy.md` | AI执行策略（浏览器操作、等待、重试、部署预检、自愈边界、生产环境约束） | test-execution |
 | `ai_execution_report.md` | AI执行报告（结果记录、截图规范、汇总报告、线上回归报告） | test-execution / test-report |
 | `tech_doc_review.md` | 技术文档审阅检查标准 | tech-doc-review |
-| `tech-optimization-ai-testing-rules.md` | 技术优化项目测试准入规则 | 手动引用 |
-| `tech-optimization-ai-testing-guide.md` | 技术优化项目使用说明 | 手动引用 |
 | `test-environment-config.md` | 测试环境 URL、登录路径、data-testid 索引（已脱敏） | test-execution 执行前读取 |
+| `KNOWLEDGE_BASE.md` | 迭代级 `knowledge/` 目录的结构规范与跨迭代知识复用约定 | test-point-extraction |
+| `TESTING_FLOW.md` | 测试侧 Skill 的标准执行顺序、触发时机和衔接细节 | test-point-extraction / 跨阶段查阅 |
+| `PROMPT_TEMPLATES.md` | 各 Skill 的提示词模板库（审阅、用例、执行、门禁） | 验收相关 Skill / 手动引用 |
 
-规则间关系详见 `.claude/docs/README-rules-relationship.md`（按需查阅）。
+> `.claude/docs/README-rules-relationship.md` 是历史版本演进日志，内容已过时，仅供参考，以本文件为准。
 
 ## 工作流（单周迭代）
 
@@ -51,7 +53,7 @@ D5 发版+线上回归     → /bug-sync → /test-report → /release-gate
 
 ## 可用技能命令
 
-> 44 个 `/命令` 可用，系统已自动注入完整列表。以下仅列出测试工作流核心命令：
+> 53 个 `/命令` 可用，系统已自动注入完整列表。以下仅列出测试工作流核心命令：
 
 | 阶段 | 核心命令 |
 |------|---------|
@@ -73,13 +75,13 @@ D5 发版+线上回归     → /bug-sync → /test-report → /release-gate
 ```
 小五云平台/
 ├── .claude/
-│   ├── rules/          ← 自动加载（rules.md）
-│   ├── docs/           ← 按需读取（~240KB：用例设计/执行策略/报告规范）
-│   ├── commands/       ← 44 个 /斜杠命令（路由层）
-│   ├── skills/         ← 项目定制层（14 个 Override + 5 个专属 + _shared）
+│   ├── rules/          ← 自动加载（rules.md，~1KB）
+│   ├── docs/           ← 按需读取（用例设计/执行策略/报告规范 + workflow-mapping.md）
+│   ├── commands/       ← 53 个 /斜杠命令（路由层）
+│   ├── skills/         ← 项目定制层（15 个 Override + 6 个本地 + _shared；身份索引见 skills/README.md）
 │   └── secrets/        ← 敏感凭证（.gitignore 排除）
 │
-├── linscode/           ← HE Base 层（39 个 Skill 只读，git pull 更新）
+├── linscode/           ← HE Base 层（46 个 Skill 只读，git pull 更新）
 │
 ├── systems/            ← AMS / 结算系统 / 剧老板 / CRM / 总控 / 云平台
 │   ├── {系统}/knowledge/   ← 功能清单、changelog、data-testid

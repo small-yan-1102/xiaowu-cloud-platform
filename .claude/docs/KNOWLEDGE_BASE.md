@@ -3,20 +3,24 @@
 > **版本**：v1.0
 > **更新日期**：2026-04-13
 > **用途**：定义 `knowledge/` 目录的结构、各类文件的格式、命名规则和维护时机，供测试工程师跨迭代积累和复用测试经验。
+>
+> ⚠️ **定位说明**：本规范是**可选增强机制**，不是强制要求。`test-point-extraction` Skill Phase 1 会自动检查迭代目录下的 `knowledge/` 子目录，找到则加载历史经验，找不到即跳过，不会阻塞流程。团队若要跨迭代沉淀风险档案和缺陷模式，可按本规范建立 `knowledge/` 目录；不做也不影响现有测试流程。
+>
+> **当前落地状态**：截至 2026-04-22，4 个迭代均未建 `knowledge/` 目录。跨迭代知识复用主要通过 `systems/{系统}/knowledge/` 完成（系统维度），而非迭代维度。若后续发现有跨迭代模式复用价值（如同一模块反复遇到的缺陷模式），再按本规范建立即可。
 
 ---
 
 ## 目录位置
 
-知识库位于**项目工作区根目录**下的 `knowledge/`，与 `input/`、`review/`、`test_suites/` 同级：
+知识库位于**项目工作区根目录**下的 `knowledge/`，与 `input/`、`review/`、`testcase/`（规范写 `test_suites/`，本项目实际路径）同级：
 
 ```
 {项目工作区}/
 ├── input/              ← PRD、技术文档（迭代输入）
 ├── review/             ← 审阅报告、测试点、用例草稿（迭代中间产物）
-├── test_suites/        ← 最终测试用例套件
-├── test_reports/       ← 执行报告
-└── knowledge/          ← 跨迭代知识积累（本文档规范）
+├── testcase/           ← 最终测试用例套件（规范术语：test_suites/）
+├── report/             ← 执行报告（规范术语：test_reports/）
+└── knowledge/          ← 跨迭代知识积累（本文档规范，可选）
     ├── constraints/
     ├── risk-profiles/
     ├── defect-patterns/

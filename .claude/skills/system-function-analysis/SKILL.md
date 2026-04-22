@@ -1,6 +1,6 @@
 ---
 name: system-function-analysis
-description: 系统功能梳理与需求分析技能。根据输入类型自动路由到四种模式：代码逆向梳理功能清单（function-inventory）、文档颗粒度评估（granularity-evaluation）、PRD结构化需求分析（requirement-analysis）、变更影响分析（change-impact-analysis）。当需要梳理系统功能、分析代码结构、评估文档颗粒度、进行需求分析或分析变更影响时使用此技能。
+description: 系统功能梳理与需求分析。按输入类型自动路由 4 种模式 — ①输入代码→梳理功能清单(function-inventory)；②输入已有文档→评估颗粒度(granularity-evaluation)；③输入全新 PRD→结构化需求分析(requirement-analysis)；④输入改造 PRD→变更影响分析(change-impact-analysis)。
 version: 1.1.0
 triggers:
   - "梳理系统功能"

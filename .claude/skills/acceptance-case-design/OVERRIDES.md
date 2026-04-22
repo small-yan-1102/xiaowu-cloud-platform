@@ -1,7 +1,7 @@
 ---
 skill: acceptance-case-design
 based_on: harness@1.0.0
-he_path: linscode/skills/iteration/acceptance/acceptance-case-design
+he_path: linscode/skills/iteration/testing/acceptance/acceptance-case-design
 override_count: 1
 last_updated: 2026-04-16
 ---

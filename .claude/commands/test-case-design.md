@@ -1,5 +1,5 @@
 ---
-description: 根据 PRD/流程图设计测试用例，输出可供 AI 直接执行的 Markdown 用例套件，支持 Mode A/B/C/D 四种模式
+description: 【测试团队用】根据 PRD/流程图设计通用测试用例（UI/API/业务/回归），输出 `test_suites/suite_*.md`。Mode A/B/C/D/E 覆盖初次生成、技术文档补充、线上回归、冒烟、审核后补齐。前端开发工程师若仅需 UI 层用例，请用 /frontend-testcase-gen（输出前缀 `suite_ui_*.md`）。
 ---
 ## 加载顺序
 

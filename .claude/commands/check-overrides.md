@@ -1,5 +1,5 @@
 ---
-description: 检查 14 个 OVERRIDES.md 与 HE Base SKILL.md 的版本一致性，发现 HE 升级后 Override 未同步的情况。
+description: 检查 `.claude/skills/*/OVERRIDES.md` 与 HE Base SKILL.md 的版本一致性，发现 HE 升级后 Override 未同步的情况。
 ---
 ## 执行步骤
 
