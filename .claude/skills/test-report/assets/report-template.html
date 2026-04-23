@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>测试报告 - {iteration}</title>
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #6c757d;
+    --bg: #fff;
+    --border: #dee2e6;
+    --green: #28a745;
+    --yellow: #ffc107;
+    --red: #dc3545;
+    --blue: #007bff;
+    --gray: #868e96;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 { border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 22px; margin-top: 32px; }
+  h3 { font-size: 18px; margin-top: 24px; border-bottom: none; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+  }
+  tbody tr:nth-child(even) { background: #fcfcfc; }
+
+  /* 质量结论高亮 */
+  .conclusion {
+    padding: 16px 20px;
+    border-radius: 6px;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 16px 0;
+  }
+  .conclusion-green { background: #d4edda; color: #155724; border-left: 6px solid var(--green); }
+  .conclusion-yellow { background: #fff3cd; color: #856404; border-left: 6px solid var(--yellow); }
+  .conclusion-red { background: #f8d7da; color: #721c24; border-left: 6px solid var(--red); }
+
+  /* 优先级标签 */
+  .priority {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .priority.p0 { background: var(--red); }
+  .priority.p1 { background: #fd7e14; }
+  .priority.p2 { background: var(--blue); }
+  .priority.p3 { background: var(--gray); }
+
+  /* 风险标签 */
+  .risk-green { color: var(--green); font-weight: 600; }
+  .risk-yellow { color: #b78103; font-weight: 600; }
+  .risk-red { color: var(--red); font-weight: 600; }
+
+  /* 导航 */
+  nav.toc {
+    background: #f8f9fa;
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  nav.toc a {
+    color: var(--blue);
+    text-decoration: none;
+    margin-right: 12px;
+    font-size: 14px;
+  }
+  nav.toc a:hover { text-decoration: underline; }
+
+  /* 代码块 */
+  code, pre { font-family: "SF Mono", Consolas, monospace; font-size: 13px; }
+  code { background: #f1f3f5; padding: 2px 6px; border-radius: 3px; }
+  pre {
+    background: #f8f9fa;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  /* 打印 */
+  @media print {
+    body { max-width: 100%; padding: 0; font-size: 12px; }
+    nav.toc { display: none; }
+    h2 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <strong>快速导航：</strong>
+  <a href="#conclusion">① 质量结论</a>
+  <a href="#summary">② 执行结果</a>
+  <a href="#coverage">③ 需求覆盖</a>
+  <a href="#defects">④ 缺陷汇总</a>
+  <a href="#failed-cases">⑤ 失败用例</a>
+  <a href="#risks">⑥ 风险项</a>
+  <a href="#next-steps">⑦ 后续建议</a>
+</nav>
+
+<!--
+  Phase 4 HTML 生成策略：
+  - 若 pandoc 可用：用 pandoc md→html，替换 <body> 内容区
+  - 若 pandoc 不可用：AI 把 md 内容按 markdown→html 规则填入 {CONTENT} 占位符
+    * 标题：## → <h2 id="anchor">
+    * 表格：| → <table>
+    * 列表：- → <ul><li>
+    * 引用：> → <blockquote>
+    * 粗体/斜体：** → <strong>, * → <em>
+    * 链接：[text](url) → <a href="url">text</a>
+-->
+
+{CONTENT}
+
+<footer style="margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px;">
+  报告生成：<code>test-report</code> skill v2.0（本地定制）· {timestamp}
+</footer>
+
+</body>
+</html>

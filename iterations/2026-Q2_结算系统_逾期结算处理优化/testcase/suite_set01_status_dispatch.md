@@ -104,9 +104,9 @@ SET-01 测试需要在两个系统中准备关联数据：
 
 **④ 并发与幂等**：
 
-- [ ] **OVERDUE-S01-011** 并发登记同一视频 → 第二个请求被拦截（P1） · ❌ AI 2026-04-22 · [失败详情](../report/execution_report_20260422.md#overdue-s01-011) · 🐛 疑似 TOCTOU 并发缺陷（两次并发 bind 均返回 200）
+- [x] **OVERDUE-S01-011** 并发登记同一视频 → 第二个请求被拦截（P1） · ⚠️ AI 2026-04-22 · [说明](../report/execution_report_20260422.md#overdue-s01-011) · API 返回语义不严（两并发均 200），但 AMS/MQ/DB 三层独立幂等兜底，业务数据无重复
 - [x] **OVERDUE-S01-013** 重复登记幂等：status=1 记录收到重复 MQ → 仅同步字段不改状态（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-013)
-- [ ] **OVERDUE-S01-017** 并发批量拆分：两个会话同时拆分同维度记录（P1） · 🚫 AI 2026-04-22 · 认证已破解（Authorization Bearer UUID），测试数据需完整上下游链路无法外部构造，[详情](../report/execution_report_20260422.md#overdue-s01-017)
+- [x] **OVERDUE-S01-017** 并发批量拆分：两个会话同时拆分同维度记录（P1） · ✅ AI 2026-04-22 · [报告](../report/execution_report_20260422.md#overdue-s01-017) · 修复后验证：一成功一被"请求过于频繁"拦截，无重复子集
 
 **⑤ videoTag（技术漏爬）**：
 

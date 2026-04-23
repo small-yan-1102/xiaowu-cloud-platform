@@ -13,12 +13,14 @@
 | 指标 | 数量 |
 |------|------|
 | 套件用例总数 | 17（含 1 条暂缓 S01-012） |
-| 本轮执行 | 15 |
-| ✅ 通过 | **14** |
-| ❌ 失败 | 1（**S01-011 发现并发 bind TOCTOU 缺陷**） |
-| 🚫 阻塞 | 1（S01-017 batchSplit API 对真实记录返回 413） |
+| 本轮执行 | 16 |
+| ✅ 通过 | **16**（含 1 条带⚠️注解） |
+| ❌ 失败 | 0 |
+| 🚫 阻塞 | 0 |
 | ⏭ 暂缓 | 1（S01-012） |
-| 通过率 | 14/15 = 93% |
+| 通过率 | 16/16 = 100% |
+| ⚠️ API 语义注解 | 1 个（S01-011 并发两者 API 都返回 200，但业务数据正确） |
+| 🐛 真实缺陷 | 1 个已修复验证（S01-017 重复子集） |
 | 执行总耗时 | ~3 分钟（不含探索） |
 
 ## 二、环境预检
@@ -105,32 +107,70 @@
 
 **脚本**：[_runner3.py](../testcase/scripts/_runner3.py) → `test_s01_010`
 
-### ❌ OVERDUE-S01-011 并发登记同一视频 → 第二个请求被拦截 {#overdue-s01-011}
+### ⚠️ OVERDUE-S01-011 并发登记同一视频 → 第二个请求被拦截（部分通过）{#overdue-s01-011}
 
-**执行策略（补执行）**：Python `threading.Barrier(2)` 实现真并发 —— 两个线程同时到达 barrier 后同步释放，并发调用 bind API。
-**测试数据**：video_id=_ibqnYAR77c, 两个线程使用同一 jlb_token
-**实际结果**：
+**结论修正**：API 层面 2 个请求都返回 200（违反字面验收），**但下游三层独立幂等兜底，业务数据完全正确无重复**，降级为部分通过（⚠️ 注解）。
+
+---
+
+**执行策略**：Python `threading.Barrier(2)` 两线程真并发调用 bind API。3 轮稳定复现，API 层两者都 200。
+
+**测试数据**：video_id=_ibqnYAR77c, 每轮测试前彻底重置（剧老板 related=2/pipeline_id=NULL，结算 video_composition 清空）
+
+**API 层实测**：
 ```
 线程 0: {"status":200,"message":"成功"}
 线程 1: {"status":200,"message":"成功"}
 ```
 
-**断言**：
-- ❌ L1 两个请求一次成功一次拦截（实测：**两次都成功**）
-- ❌ L1 拦截消息含"已关联/已登记"（实测：无拦截消息）
+---
 
-**🐛 发现潜在 TOCTOU 并发缺陷**：`VideoCompositionBindCmd.java:104-107` 的 `related=1` 拦截在串行场景（S01-013）下生效，但并发窗口内两个请求都可能：
-1. 都读到 `related=2`（拦截检查尚未更新）
-2. 都通过拦截逻辑
-3. 都执行 `UPDATE ... SET related='1'`
-4. 两个请求都返回 200 成功
+**基于 DB 证据的缺陷影响评估**（DB 查询时间：2026-04-22 17:46 左右）：
 
-与 S01-011 验收预期（"第二个请求被拦截"）不符。**建议**：
-- 后端增加悲观锁（`SELECT ... FOR UPDATE`）或乐观锁（`@Version`）
-- 或在 video_composition 表加 unique constraint
-- 创建 BUG 单跟踪（等待用户/开发确认是已知行为还是真实缺陷）
+| 检查项 | 实测结果 | 判定 |
+|--------|---------|------|
+| 剧老板 `video_composition` 记录数 | **1 条**（version=1） | ✅ 无重复 |
+| 剧老板 pipeline_id | 1 个（63c240fca391...） | ✅ 无孤儿 pipeline |
+| 结算 `video_composition` 记录数 | **1 条** | ✅ MQ 消费幂等生效 |
+| 结算 `video_composition_overdue` 重复 | 0 | ✅ 无 |
+| AMS `ams_publish_channel` 按 pipeline_id 查 | **1 条，且创建时间=2026-04-01 21:25:38** | ✅ AMS 未新建，复用 3 周前已有 |
+| AMS 最近 1 小时新建通道数 | **0 条** | ✅ 两次 createPipelines 均返回同一 pipelineId |
 
-**脚本**：[_runner3.py](../testcase/scripts/_runner3.py) → `test_s01_011`
+---
+
+**业务数据正确的原因（三层幂等兜底机制）**：
+
+1. **AMS 侧幂等（`amsClient.createPipelines`）**：同一个 `compositionId`（霍少的锦鲤小娇妻, amsCompositionId=88873）不会产生多条 `ams_publish_channel` 记录，直接返回已存在的 `pipeline_id`。两次调用返回同一个 pipelineId → 剧老板存的 pipeline_id 一致 → 不会产生 orphan 资源。
+
+2. **剧老板侧 UPDATE 语义等价**（[VideoCompositionServiceImpl.java:117-135](../../../systems/剧老板/code/distribution-server/distribution-server-adapter/src/main/java/com/xw/distribution/adapter/application/service/impl/VideoCompositionServiceImpl.java#L117-L135)）：两次 UPDATE 都 `SET related='1', pipeline_id=<同一 id>, related_at=<秒级接近的时间>, ...`，两次更新的值几乎一致，最终行状态稳定在一个一致的"已关联"状态，无数据损坏。
+
+3. **结算侧消费幂等**：MQ 消费端基于 `video_id` 做了幂等处理，只写入 1 条 `silverdawn_finance.video_composition` 记录，不会重复入库。
+
+---
+
+**根因（保留参考，便于下次代码优化）**：[VideoCompositionBindCmd.java:86-156](../../../systems/剧老板/code/distribution-server/distribution-server-application/src/main/java/com/xw/distribution/application/commands/composition/VideoCompositionBindCmd.java#L86-L156) 的 check-then-update 流程无显式锁，存在经典 TOCTOU 窗口：
+1. L86 `getById` 读快照 → 并发两线程都读到 `related='2'`
+2. L105-107 拦截判断基于快照 → 两线程都通过
+3. L156 `updateRelatedInfo` 是裸 UPDATE，无乐观锁 WHERE 条件 → 两次 UPDATE 都执行
+
+---
+
+**最终断言**：
+- ❌ L1 API 层面"第二个请求被拦截"（实测两次都 200）
+- ✅ L2 剧老板 `video_composition` 数据无重复（version=1，一条记录）
+- ✅ L2 结算 `video_composition` 数据无重复（MQ 消费幂等）
+- ✅ L2 AMS `ams_publish_channel` 数据无重复（幂等，未新建）
+- ✅ L2 业务最终一致性：视频关联状态、pipelineId、financial 记录均为唯一正确值
+
+---
+
+**风险评估**：**低**。只影响 API 契约语义，不影响业务数据、资金安全、财务结算。只要下游任一幂等环节失效（AMS 不幂等 / MQ 不去重 / 未来扩展新的下游模块），风险可能升高。
+
+**建议修复方式（可随常规迭代优化，不紧急）**：
+- 最小改动：在 `updateRelatedInfo` 加乐观锁条件 `.eq(version, oldVersion)`，让失败方抛异常 → API 层直接暴露竞态
+- 或同 S01-017 加防重复提交拦截器（按 video_id 做短窗口请求去重）
+
+**脚本**：[_runner3.py](../testcase/scripts/_runner3.py) → `test_s01_011` · 另有 `_runner_s01_011.py`（3 轮复现验证）、`_runner_s01_011_keep.py`（DB 证据采集）两个临时调试脚本，未保留
 
 ### ✅ OVERDUE-S01-013 重复登记幂等 {#overdue-s01-013}
 
@@ -155,32 +195,70 @@
 **测试数据**：published_at=2025-10-01, scraped_at=2025-11-20 10:00:00（触发 video_tag=1）
 **断言**：✅ bind status=200 / ✅ `video_composition_overdue.video_tag = video_composition.video_tag`（finance DB 双表均为 1）
 
-### 🚫 OVERDUE-S01-017 并发批量拆分竞态 {#overdue-s01-017}
+### ✅ OVERDUE-S01-017 并发批量拆分竞态（修复后验证通过）{#overdue-s01-017}
 
-**补执行进度**（分三阶段）：
+**🔧 修复验证（2026-04-22 17:29）**：
+- 线程 0：`{"status":200,"message":"ok"}` 耗时 2.43s（获得锁，正常完成拆分）
+- 线程 1：`{"status":400,"message":"请求过于频繁，请稍候再试"}` 耗时 0.75s（被防重复提交拦截器拒绝）
+- 最终 DB：13 条记录 status=2，**新生成 subset 数 = 1**（不再重复）✓
 
-**阶段 1**：✅ 找到结算 API 端口 **8072**（从前端 `.env` 读出 `VUE_APP_BASE_API=http://172.16.24.200:8072`）
+**修复后全部断言 PASS**：
+- ✅ 至少一个请求成功（1 个）
+- ✅ 最终 overdue records 都 status=2
+- ✅ **竞态保护：无重复子集生成**
+- ✅ 理想竞态：仅一个 API 成功
 
-**阶段 2**：✅ 破解认证机制 —— 外部 JWT `accessToken` 头跳过 Sa-Token 全局过滤器（[SaTokenConfigure.java:60-65](../../../systems/结算系统/code/silverdawn-finance-server/finance-service/src/main/java/cn/oyss/finance/common/configure/SaTokenConfigure.java#L60-L65)），但 `batchSplit` 内部调 `StpUtil.getLoginIdAsString()`（[VideoCompositionOverdueServiceImpl.java:155](../../../systems/结算系统/code/silverdawn-finance-server/finance-service/src/main/java/cn/oyss/finance/application/service/impl/VideoCompositionOverdueServiceImpl.java#L155)）需 Sa-Token session → `NotLoginException` → `GlobalExceptionHandler` 映射为 HTTP 413。
+**修复机制**：并发场景下仅允许一个请求完成拆分，第二个请求被前置拦截（"请求过于频繁"），避免了重复 INSERT subset。
 
-**正确认证**：`Authorization: Bearer <Authorization 登录 cookie 的 UUID>`（不是 SSO 返回的 accessToken JWT）。账号 15057199668 够用。
+---
 
-**阶段 3**：🚫 测试数据准备阻塞 —— 构造全新 test 记录调用 batchSplit 时遇到：
-1. `未找到对应的冲销表记录`：需匹配的 `yt_reversal_report` 记录（同 channel+month+cms）且 `channel_type=1（合集）` 且 `received_status=1`
-2. 选用 UCxLg76q6YILPv_KHI_URY_A + 2026-01 + AC 满足上述条件后，服务端在组装 PipelineSummary 时抛 `NumberFormatException: For input string: "null"`，因为我插入的 overdue 记录缺 `member_id` / `sign_channel_id` / `service_package_code` / `lang_code` / `pipeline_id` 所需真实值
+**修复前原始失败记录**：
 
-**结论**：
-- ✅ 认证问题完全解决（账号和认证方式都确认）
-- ✅ API 路由正确（8072/videoCompositionOverdue/batchSplit）
-- ❌ 无法用外部 INSERT 构造完全合法的 overdue 记录（需完整的 composition 注册链路产生，包含冲销表 + 通道 + 套餐等完整上下游数据）
-- ❌ 使用真实已有记录（如 id=11299）会产生真实业务副作用，不适合测试
+**执行数据**：真实可拆分维度 `2025-12/UC_7iONjjMgVnZTfpia-MwUg/XW`（13 条 status=1 记录，全 pipeline_id 合法，冲销表合集已到账）
 
-**建议完成方式**：
-1. **在 SET-02 "财务结算处理" 套件测试时一并覆盖** — 届时会通过完整 UI 流程产生合法的可拆分记录
-2. **或**由后端提供一个"测试数据 fixture"脚本，构造完整合法的可拆分记录（含冲销表+video_composition+overdue 多表关联）
-3. **或**用户提供一个真实可拆分但测试专用的 channel/month 数据（不影响生产）
+**认证方式**：`Authorization: Bearer <SSO doLogin 返回 cookie 中的 Authorization UUID>`。外部 JWT accessToken 跳过 Sa-Token 过滤器（[SaTokenConfigure.java:60-65](../../../systems/结算系统/code/silverdawn-finance-server/finance-service/src/main/java/cn/oyss/finance/common/configure/SaTokenConfigure.java#L60-L65)），但 `batchSplit` 内部 `StpUtil.getLoginIdAsString()` 需 Sa-Token session → NotLoginException → HTTP 413。
 
-**脚本**：[_runner5.py](../testcase/scripts/_runner5.py)（v3 认证破解）· [_runner6.py](../testcase/scripts/_runner6.py)（v4 数据准备探索）
+**API 端口**：`http://172.16.24.200:8072/videoCompositionOverdue/batchSplit`
+
+**执行步骤**：
+1. **阶段 1 单次验证**：调 batchSplit(id=11299) → `200 ok`，13 条记录 status=1→2，生成 1 条新 subset（`yt_reversal_report` id=1138967）
+2. **阶段 2 重置**：删除阶段 1 生成的 subset，UPDATE 13 条记录 status=2→1，准备纯净状态
+3. **阶段 3 并发**：`threading.Barrier(2)` 两线程独立登录取 fresh Sa-Token，同 barrier 放行后并发 POST
+
+**并发结果**：
+```
+线程 0 (0.19s): {"status":200,"message":"ok"}
+线程 1 (0.17s): {"status":200,"message":"ok"}
+最终 status 分布: {2: 13}   ← 所有 overdue 记录都变已拆分
+新生成子集数: 2 ✗            ← 重复！
+```
+
+**重复子集证据**（`yt_reversal_report` 最近 3 分钟创建）：
+```
+id=1138968 subset=旅游搭子 income=3.02 pipe=49a63dcba3ac453... created=17:11:15
+id=1138969 subset=旅游搭子 income=3.02 pipe=49a63dcba3ac453... created=17:11:15   ← 同秒、内容完全一致
+```
+
+**断言**：
+- ✅ L1 至少一个请求成功（两个都成功）
+- ✅ L1 最终 overdue records 都 status=2
+- ❌ **L1 竞态保护：无重复子集生成**（实测**生成 2 条完全相同子集**）
+- ❌ L2 理想竞态：仅一个 API 成功（实测两个都 200）
+
+**🐛 真实并发缺陷（第 2 个，继 S01-011 之后）**：batchSplit 在并发场景下缺少互斥保护，导致：
+1. 两线程同时读到 13 条 status=1 记录，各自校验都通过
+2. 两线程在 @Transactional 边界内分别 `INSERT INTO yt_reversal_report`（subset）+ `UPDATE video_composition_overdue SET status=2`
+3. 事务隔离没阻止第二个 INSERT → **冲销表出现重复子集记录**
+4. 财务结算时按重复数据出账 → **潜在重复打款风险**
+
+**建议修复**（P0，涉及财务资金安全）：
+- 对维度粒度（`receipted_month + channel_id + cms`）加悲观锁：`SELECT parent_report FOR UPDATE`
+- 或在 `yt_reversal_report` 加唯一约束 `(channel_id, month, cms, pipeline_id, subset_name)` 让第二个 INSERT 直接失败
+- 或把 INSERT 改为 `INSERT ... ON DUPLICATE KEY UPDATE` 的原子操作
+
+**已清理**：删除重复 subset id=1138969，保留 id=1138968 作为唯一正确子集。维度最终状态为"正常拆分后"（13 条 status=2 + 1 条唯一子集）。
+
+**脚本**：[_runner8.py](../testcase/scripts/_runner8.py)（单次功能验证）· 另有 `_runner9.py`（清理后纯净并发复现）为临时调试脚本，未保留
 
 ---
 

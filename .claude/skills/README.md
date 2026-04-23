@@ -13,7 +13,7 @@
 
 ## 📋 当前索引（按身份分组）
 
-### 🔧 Override（15 个）
+### 🔧 Override（17 个）
 
 对应 `linscode/skills/**/<name>/SKILL.md` 的本地覆盖：
 
@@ -26,6 +26,8 @@
 | `backend-tech-design-mvc/` | `iteration/technical-solution/backend-tech-design-mvc/` |
 | `backend-tech-design-presentation/` | `iteration/technical-solution/backend-tech-design-presentation/` |
 | `multimodal-visual-assertion/` | `iteration/testing/multimodal-visual-assertion/` |
+| `release-gate/` | `iteration/testing/release-gate/`（引用 test-report quality-rules）|
+| `submission-gate/` | `iteration/testing/submission-gate/`（引用 test-report quality-rules）|
 | `tech-doc-review/` | `iteration/testing/tech-doc-review/` |
 | `test-case-design/` | `iteration/testing/test-case-design/` |
 | `test-case-prd-consistency/` | `iteration/testing/qa-tools/test-case-prd-consistency/` |
@@ -35,7 +37,7 @@
 | `test-point-extraction/` | `iteration/testing/test-point-extraction/` |
 | `visual-location-fallback/` | `iteration/testing/visual-location-fallback/` |
 
-### 🏠 Local（6 个）
+### 🏠 Local（8 个）
 
 无上游 linscode 源，本地独立维护：
 
@@ -45,7 +47,9 @@
 | `code-implementation/` | 基于 API 文档对比 mock 数据，生成接口联调实施计划 |
 | `mark-case/` | 交互式勾选用例执行状态（人工用） |
 | `requirements-update/` | 需求变更同步 |
+| `session-recover/` | 会话恢复 |
 | `system-function-analysis/` | 系统功能梳理（4 模式：代码→功能清单 / 文档→颗粒度 / 全新 PRD→需求分析 / 改造 PRD→变更影响） |
+| `test-report/` | 测试报告生成（本地 v2.0，跨 skill 共享质量规则）|
 | `yunxiao-sync/` | 测试用例同步到阿里云效 Testhub |
 
 ### 📦 Shared（1 个）

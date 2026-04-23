@@ -78,7 +78,7 @@ D5 发版+线上回归     → /bug-sync → /test-report → /release-gate
 │   ├── rules/          ← 自动加载（rules.md，~1KB）
 │   ├── docs/           ← 按需读取（用例设计/执行策略/报告规范 + workflow-mapping.md）
 │   ├── commands/       ← 53 个 /斜杠命令（路由层）
-│   ├── skills/         ← 项目定制层（15 个 Override + 6 个本地 + _shared；身份索引见 skills/README.md）
+│   ├── skills/         ← 项目定制层（17 个 Override + 8 个本地 + _shared；身份索引见 skills/README.md）
 │   └── secrets/        ← 敏感凭证（.gitignore 排除）
 │
 ├── linscode/           ← HE Base 层（46 个 Skill 只读，git pull 更新）
