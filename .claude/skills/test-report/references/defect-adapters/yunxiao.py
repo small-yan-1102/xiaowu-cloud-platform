@@ -40,7 +40,22 @@ if sys.platform == 'win32' and hasattr(sys.stdout, 'buffer'):
 ADAPTER_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = ADAPTER_DIR.parents[4]  # .../.claude/skills/test-report/references/defect-adapters/ → 项目根
 LINSCODE_SCRIPT = PROJECT_ROOT / 'linscode' / 'lib' / 'yunxiao' / 'scripts' / 'query_defects.py'
-CONFIG_PATH = PROJECT_ROOT / 'linscode' / 'lib' / 'yunxiao' / 'config.yaml'
+
+# 配置文件按优先级查找（避免把敏感 PAT 放进 linscode 仓库）：
+#   1. 本地 .claude/skills/yunxiao-sync/config.yaml（yunxiao-sync skill 共用，已 gitignore）
+#   2. linscode/lib/yunxiao/config.yaml（上游默认位置，不推荐）
+CONFIG_CANDIDATES = [
+    PROJECT_ROOT / '.claude' / 'skills' / 'yunxiao-sync' / 'config.yaml',
+    PROJECT_ROOT / 'linscode' / 'lib' / 'yunxiao' / 'config.yaml',
+]
+
+
+def resolve_config_path():
+    """返回第一个存在的配置文件路径，或 None"""
+    for p in CONFIG_CANDIDATES:
+        if p.exists():
+            return p
+    return None
 
 
 # ============================================================
@@ -61,12 +76,13 @@ def selftest():
         return 2
 
     # 3. 检查配置文件存在 + 必需字段
-    if not CONFIG_PATH.exists():
+    config_path = resolve_config_path()
+    if config_path is None:
         return 2
 
     try:
         import yaml
-        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+        with open(config_path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f) or {}
         yunxiao = config.get('yunxiao', {})
         projex = config.get('projex', {})
@@ -94,38 +110,55 @@ def selftest():
 
 def query(sprint_id=None):
     """调用 linscode/.../query_defects.py 并转换为契约格式"""
+    config_path = resolve_config_path()
     cmd = ['python', str(LINSCODE_SCRIPT), '--json']
+    if config_path:
+        cmd += ['--config', str(config_path)]
     if sprint_id:
         cmd += ['--sprint-id', sprint_id]
 
     try:
+        # 不让 subprocess 自动 decode（Windows 上 query_defects.py 的 stdout 可能混 cp936）
+        # 自己按 utf-8 + errors='replace' 解码，容错
+        env = dict(os.environ)
+        env['PYTHONIOENCODING'] = 'utf-8'  # 迫使上游脚本用 utf-8 输出
         result = subprocess.run(
             cmd,
             capture_output=True,
-            text=True,
-            encoding='utf-8',
             cwd=str(PROJECT_ROOT),
             timeout=30,
+            env=env,
         )
+        stdout = result.stdout.decode('utf-8', errors='replace')
+        stderr = result.stderr.decode('utf-8', errors='replace')
+        returncode = result.returncode
     except subprocess.TimeoutExpired:
         return None, 3
     except FileNotFoundError:
         return None, 1
 
-    if result.returncode != 0:
+    # 把 stdout / stderr 合并当 payload 做错误分析（上游脚本会把 HTTP 错误写到 stdout 而非 stderr）
+    combined = (stdout or '') + (stderr or '')
+
+    if returncode != 0:
         # 上游脚本的退出码映射到契约退出码
-        stderr = result.stderr or ''
-        if 'ImportError' in stderr or 'ModuleNotFoundError' in stderr:
+        if 'ImportError' in combined or 'ModuleNotFoundError' in combined:
             return None, 1
-        if '401' in stderr or '403' in stderr or 'timeout' in stderr.lower():
+        # HTTP 4xx/5xx / 认证 / 超时 / API schema 错误 → 归为"网络/权限/API 失败"
+        if any(k in combined for k in ['HTTP 4', 'HTTP 5', '401', '403', 'timeout',
+                                         'InvaildData', '不能为空', 'InvalidData']):
             return None, 3
         return None, 4
 
-    # 解析上游 JSON 输出
+    # 解析上游 JSON 输出（有时 returncode=0 但 stdout 含 error 字段）
     try:
-        upstream_data = json.loads(result.stdout)
+        upstream_data = json.loads(stdout)
     except json.JSONDecodeError:
         return None, 4
+
+    # 上游脚本在 API 错误时可能仍返回 exit 0，但 JSON 里含 error 字段
+    if isinstance(upstream_data, dict) and 'error' in upstream_data:
+        return None, 3
 
     return upstream_data, 0
 
